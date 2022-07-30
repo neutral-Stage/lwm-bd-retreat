@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, forwardRef } from "react";
 import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -21,6 +21,7 @@ import { v4 as uuidv4 } from "uuid";
 import { fellowships } from "../data/fellowship";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
+import CircularProgress from "@mui/material/CircularProgress";
 import FormHelperText from "@mui/material/FormHelperText";
 import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
@@ -29,7 +30,13 @@ import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import Stack from "@mui/material/Stack";
 import Card from "@mui/material/Card";
 import CardMedia from "@mui/material/CardMedia";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 
+import Slide from "@mui/material/Slide";
 import { client } from "../service/sanityClient";
 function Copyright(props) {
   return (
@@ -64,6 +71,7 @@ export default function Index() {
       reader.readAsDataURL(file);
     });
   const id = uuidv4();
+
   const initialValues = {
     name: "",
     email: "",
@@ -83,7 +91,23 @@ export default function Index() {
       [name]: value,
     });
   };
+  const [open, setOpen] = useState(true);
+  const [loading, setLoading] = useState(false);
 
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setDate(new Date());
+    setDataUri("");
+    setImage(null);
+    setValues(initialValues);
+    setOpen(false);
+  };
+  const Transition = forwardRef(function Transition(props, ref) {
+    return <Slide direction="up" ref={ref} {...props} />;
+  });
   const [date, setDate] = useState(new Date());
   const [dataUri, setDataUri] = useState("");
   const [image, setImage] = useState(null);
@@ -107,6 +131,8 @@ export default function Index() {
   };
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setLoading(true);
+    handleClickOpen();
     const data = new FormData(event.currentTarget);
     const form = {
       _id: id,
@@ -123,64 +149,72 @@ export default function Index() {
     await client.create(form).then((res) => {
       console.log(`Participant was created, document ID is ${res._id}`);
     });
-
-    await client.assets
-      .upload("image", image, {
-        filename: data.get("name"),
-      })
-      .then((imageAsset) => {
-        // Here you can decide what to do with the returned asset document.
-        // If you want to set a specific asset field you can to the following:
-        return client
-          .patch(id)
-          .set({
-            image: {
-              _type: "image",
-              asset: {
-                _type: "reference",
-                _ref: imageAsset._id,
+    if (image) {
+      await client.assets
+        .upload("image", image, {
+          filename: data.get("name"),
+        })
+        .then((imageAsset) => {
+          // Here you can decide what to do with the returned asset document.
+          // If you want to set a specific asset field you can to the following:
+          return client
+            .patch(id)
+            .set({
+              image: {
+                _type: "image",
+                asset: {
+                  _type: "reference",
+                  _ref: imageAsset._id,
+                },
               },
-            },
-          })
-          .commit();
-      })
-      .then(() => {
-        console.log("Done!");
-      });
-    console.log(form);
+            })
+            .commit();
+        })
+        .then(() => {
+          console.log("Done!");
+        });
+
+      // console.log(form);
+    }
+    setLoading(false);
   };
-  const welcomeUser = (name) => {
-    console.log(`welcome ${name}`);
-  };
-  // useEffect(() => {
-  //   if (!values.fullname) return;
-  //   (async () => {
-  //     const userDoc = {
-  //       _type: "participant",
-  //       _id: id,
-  //       name: name,
-  //       walletAddress: address,
-  //     };
-
-  //     const result = await client.createIfNotExists(userDoc);
-
-  //     welcomeUser(result.userName);
-  //   })();
-  // }, []);
-  // useEffect(() => {
-  //   const query = '*[_type == "participant"  ] {name}';
-
-  //   client.fetch(query).then((bikes) => {
-  //     console.log("Bikes with more than one seat:");
-  //     bikes.forEach((bike) => {
-  //       console.log(`${bike.name} `);
-  //     });
-  //   });
-  // }, []);
 
   return (
     <LocalizationProvider dateAdapter={AdapterMoment}>
       <ThemeProvider theme={theme}>
+        <Dialog
+          open={open}
+          TransitionComponent={Transition}
+          keepMounted
+          onClose={handleClose}
+          aria-describedby="alert-dialog-slide-description"
+        >
+          {loading ? (
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              minHeight="20vh"
+              width={200}
+            >
+              <CircularProgress />
+            </Box>
+          ) : (
+            <>
+              <DialogTitle sx={{ textAlign: "center" }}>
+                {"Thank you for completing this form"}
+              </DialogTitle>
+              <DialogContent sx={{ textAlign: "center" }}>
+                <DialogContentText id="alert-dialog-slide-description">
+                  We will let you know soon
+                </DialogContentText>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={handleClose}>Close</Button>
+              </DialogActions>
+            </>
+          )}
+        </Dialog>
         <Container component="main" maxWidth="xs">
           <CssBaseline />
           <Box
