@@ -249,6 +249,7 @@ export default function Index() {
                     id="fullName"
                     label="Full Name"
                     name="name"
+                    value={values.name}
                     onChange={(e) => handleInputChange(e)}
                     autoFocus
                   />
@@ -273,6 +274,7 @@ export default function Index() {
                     label="Phone"
                     name="contact"
                     autoComplete="off"
+                    value={values.contact}
                     onChange={(e) => handleInputChange(e)}
                   />
                 </Grid>
@@ -284,6 +286,7 @@ export default function Index() {
                     label="Address"
                     name="address"
                     autoComplete="off"
+                    value={values.address}
                     onChange={(e) => handleInputChange(e)}
                   />
                 </Grid>
