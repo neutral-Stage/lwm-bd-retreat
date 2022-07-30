@@ -261,7 +261,7 @@ export default function Index() {
                     id="email"
                     label="Email"
                     name="email"
-                    autoComplete="email"
+                    autoComplete="off"
                     onChange={(e) => handleInputChange(e)}
                   />
                 </Grid>
@@ -272,7 +272,7 @@ export default function Index() {
                     id="phone"
                     label="Phone"
                     name="contact"
-                    autoComplete="phone"
+                    autoComplete="off"
                     onChange={(e) => handleInputChange(e)}
                   />
                 </Grid>
@@ -283,7 +283,7 @@ export default function Index() {
                     id="address"
                     label="Address"
                     name="address"
-                    autoComplete="address"
+                    autoComplete="off"
                     onChange={(e) => handleInputChange(e)}
                   />
                 </Grid>
@@ -349,7 +349,7 @@ export default function Index() {
                   <Button variant="contained" component="label">
                     Upload Photo
                     <input
-                      hidden
+                      // hidden
                       onChange={(event) =>
                         onChange(event.target.files[0] || null)
                       }
@@ -357,21 +357,19 @@ export default function Index() {
                       type="file"
                     />
                   </Button>
-                  <IconButton
+                  {/* <IconButton
                     color="primary"
                     aria-label="upload picture"
                     component="label"
                   >
                     <input
-                      hidden
-                      onChange={(event) =>
-                        onChange(event.target.files[0] || null)
-                      }
+                      // hidden
+                     
                       accept="image/*"
                       type="file"
                     />
                     <PhotoCamera />
-                  </IconButton>
+                  </IconButton> */}
                 </Stack>
               </Grid>
               {dataUri && (
