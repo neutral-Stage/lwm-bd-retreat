@@ -352,7 +352,7 @@ export default function Index() {
                   <Button variant="contained" component="label">
                     Upload Photo
                     <input
-                      // hidden
+                      hidden
                       onChange={(event) =>
                         onChange(event.target.files[0] || null)
                       }
@@ -360,19 +360,21 @@ export default function Index() {
                       type="file"
                     />
                   </Button>
-                  {/* <IconButton
+                  <IconButton
                     color="primary"
                     aria-label="upload picture"
                     component="label"
                   >
                     <input
-                      // hidden
-                     
+                      hidden
+                      onChange={(event) =>
+                        onChange(event.target.files[0] || null)
+                      }
                       accept="image/*"
                       type="file"
                     />
                     <PhotoCamera />
-                  </IconButton> */}
+                  </IconButton>
                 </Stack>
               </Grid>
               {dataUri && (
