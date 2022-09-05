@@ -82,31 +82,6 @@ export default function Index() {
     image: null,
   };
   const [values, setValues] = useState(initialValues);
-  const [serNo, setSerno] = useState(null);
-  const [roll, setRoll] = useState(0);
-
-  useEffect(() => {
-    const fellowshipName = values.fellowshipName;
-
-    const query =
-      '*[_type=="participant" && $fellowshipName == fellowshipName ]| order(_createdAt desc)[0]{roll}';
-    const params = { fellowshipName: fellowshipName };
-
-    client.fetch(query, params).then((number) => {
-      let n = 0;
-      if (number?.roll) {
-        n = number.roll + 1;
-        setRoll(n);
-      } else {
-        n = n + 1;
-        setRoll(n);
-      }
-
-      var zerofilled = ("000" + n).slice(-3);
-      setSerno(zerofilled);
-      console.log(number, zerofilled);
-    });
-  }, [serNo, values.fellowshipName]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -160,6 +135,7 @@ export default function Index() {
     const data = new FormData(event.currentTarget);
     const fellowshipName = data.get("fellowshipName");
     const felName = fellowshipName.slice(0, 3).toUpperCase();
+    var serNo = Math.floor(1000 + Math.random() * 9000);
     const regNo = felName + "-" + serNo;
     const form = {
       _id: id,
