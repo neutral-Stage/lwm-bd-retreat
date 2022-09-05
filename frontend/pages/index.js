@@ -148,7 +148,6 @@ export default function Index() {
       invitedBy: data.get("invitedBy"),
       fellowshipName: fellowshipName,
       birthDate: values.birthDate,
-      roll: roll,
       guestOrSaved: data.get("guestOrSaved"),
     };
 
