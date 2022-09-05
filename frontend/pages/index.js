@@ -1,5 +1,5 @@
-import React, { useState, forwardRef } from "react";
-import Avatar from "@mui/material/Avatar";
+import React, { useState, forwardRef, useEffect } from "react";
+import Image from "next/image";
 import Button from "@mui/material/Button";
 import CssBaseline from "@mui/material/CssBaseline";
 import TextField from "@mui/material/TextField";
@@ -7,7 +7,6 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Link from "@mui/material/Link";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
-import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
@@ -22,7 +21,6 @@ import { fellowships } from "../data/fellowship";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import CircularProgress from "@mui/material/CircularProgress";
-import FormHelperText from "@mui/material/FormHelperText";
 import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
 import IconButton from "@mui/material/IconButton";
@@ -35,9 +33,9 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
+import { client } from "../service/sanityClient";
 
 import Slide from "@mui/material/Slide";
-import { client } from "../service/sanityClient";
 function Copyright(props) {
   return (
     <Typography
@@ -80,9 +78,35 @@ export default function Index() {
     fellowshipName: "Dhaka Church",
     birthDate: convertDate(new Date()),
     guestOrSaved: "guest",
+    invitedBy: "",
     image: null,
   };
   const [values, setValues] = useState(initialValues);
+  const [serNo, setSerno] = useState(null);
+  const [roll, setRoll] = useState(0);
+
+  useEffect(() => {
+    const fellowshipName = values.fellowshipName;
+
+    const query =
+      '*[_type=="participant" && $fellowshipName == fellowshipName ]| order(_createdAt desc)[0]{roll}';
+    const params = { fellowshipName: fellowshipName };
+
+    client.fetch(query, params).then((number) => {
+      let n = 0;
+      if (number?.roll) {
+        n = number.roll + 1;
+        setRoll(n);
+      } else {
+        n = n + 1;
+        setRoll(n);
+      }
+
+      var zerofilled = ("000" + n).slice(-3);
+      setSerno(zerofilled);
+      console.log(number, zerofilled);
+    });
+  }, [serNo, values.fellowshipName]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -134,15 +158,21 @@ export default function Index() {
     setLoading(true);
     handleClickOpen();
     const data = new FormData(event.currentTarget);
+    const fellowshipName = data.get("fellowshipName");
+    const felName = fellowshipName.slice(0, 3).toUpperCase();
+    const regNo = felName + "-" + serNo;
     const form = {
       _id: id,
       _type: "participant",
+      regNo: regNo,
       name: data.get("name"),
       email: data.get("email"),
       contact: data.get("contact"),
       address: data.get("address"),
-      fellowshipName: data.get("fellowshipName"),
+      invitedBy: data.get("invitedBy"),
+      fellowshipName: fellowshipName,
       birthDate: values.birthDate,
+      roll: roll,
       guestOrSaved: data.get("guestOrSaved"),
     };
 
@@ -225,11 +255,11 @@ export default function Index() {
               alignItems: "center",
             }}
           >
-            <Avatar sx={{ m: 1, bgcolor: "primary.main" }}>
-              <GroupAddIcon />
-            </Avatar>
+            <div>
+              <Image src="/lwmb.png" height={120} width={140} />
+            </div>
             <Typography component="h1" variant="h5" align="center">
-              Life Word Mission Bangladesh Retreat Form
+              Bangladesh Life Word Mission Retreat Form
             </Typography>
             <Typography component="h1" variant="overline" align="center">
               October 21-23, 2022
@@ -285,6 +315,18 @@ export default function Index() {
                     onChange={(e) => handleInputChange(e)}
                   />
                 </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    required
+                    fullWidth
+                    id="invitedBy"
+                    label="Invited By"
+                    name="invitedBy"
+                    autoComplete="off"
+                    value={values.invitedBy}
+                    onChange={(e) => handleInputChange(e)}
+                  />
+                </Grid>
 
                 <Grid item xs={12}>
                   <FormControl fullWidth>
@@ -294,7 +336,6 @@ export default function Index() {
                     <Select
                       labelId="demo-simple-select-helper-label"
                       id="demo-simple-select-helper"
-                      // value={fellowship}
                       label="Fellowship Name"
                       name="fellowshipName"
                       onChange={(e) => handleInputChange(e)}

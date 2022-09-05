@@ -8,6 +8,11 @@ export default {
 
   fields: [
     {
+      name: "regNo",
+      title: "Regetration Number",
+      type: "string",
+    },
+    {
       name: "name",
       title: "Name",
       type: "string",
@@ -40,6 +45,11 @@ export default {
       type: "string",
     },
     {
+      name: "invitedBy",
+      title: "Invited By",
+      type: "string",
+    },
+    {
       name: "fellowshipName",
       title: "Fellowship Name",
       type: "string",
@@ -69,6 +79,12 @@ export default {
       name: "remarks",
       title: "Remarks",
       type: "blockContent",
+    },
+    {
+      name: "roll",
+      title: "Roll",
+      type: "number",
+      hidden: true,
     },
   ],
   preview: {
