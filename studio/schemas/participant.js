@@ -67,6 +67,18 @@ export default {
       },
     },
     {
+      name: "gender",
+      title: "Male/Female",
+      type: "string",
+      options: {
+        list: [
+          { title: "Male", value: "male" },
+          { title: "Female", value: "female" },
+        ],
+        layout: "radio",
+      },
+    },
+    {
       name: "image",
       title: "Image",
       type: "image",

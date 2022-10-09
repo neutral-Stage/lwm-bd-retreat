@@ -220,7 +220,7 @@ export default function Index() {
             </>
           )}
         </Dialog>
-        <Container component="main" maxWidth="xs">
+        {/* <Container component="main" maxWidth="xs">
           <CssBaseline />
           <Box
             sx={{
@@ -416,7 +416,8 @@ export default function Index() {
             </Box>
           </Box>
           <Copyright sx={{ mt: 5 }} />
-        </Container>
+        </Container> */}
+        <Text>We are closed now!</Text>
       </ThemeProvider>
     </LocalizationProvider>
   );
