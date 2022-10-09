@@ -239,7 +239,10 @@ export default function Index() {
             <Typography component="h1" variant="overline" align="center">
               October 21-23, 2022
             </Typography>
-            <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
+            <Box>
+              <Typography>We are closed now!</Typography>
+            </Box>
+            {/* <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <TextField
@@ -413,11 +416,10 @@ export default function Index() {
               >
                 Submit
               </Button>
-            </Box>
+            </Box> */}
           </Box>
           <Copyright sx={{ mt: 5 }} />
         </Container>
-        {/* <Text>We are closed now!</Text> */}
       </ThemeProvider>
     </LocalizationProvider>
   );
