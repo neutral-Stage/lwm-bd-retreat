@@ -58,6 +58,37 @@ export default function StickyHeadTable(props) {
         <Table sx={{ minWidth: 650 }} size="small" aria-label="a dense table">
           <TableHead>
             <TableRow>
+              <TableCell>Participant</TableCell>
+              <TableCell align="right">Count</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            <TableRow
+              key="guest"
+              sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+            >
+              <TableCell component="th" scope="row">
+                Guest
+              </TableCell>
+              <TableCell align="right">{guest.length}</TableCell>
+            </TableRow>
+            <TableRow
+              key="saved"
+              sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+            >
+              <TableCell component="th" scope="row">
+                Saved
+              </TableCell>
+              <TableCell align="right">{saved.length}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <Divider sx={{ marginY: "2rem" }} />
+      <TableContainer component={Paper} sx={{ padding: "1rem" }}>
+        <Table sx={{ minWidth: 650 }} size="small" aria-label="a dense table">
+          <TableHead>
+            <TableRow>
               <TableCell>Fellowship Name</TableCell>
               <TableCell align="right">Participants</TableCell>
             </TableRow>
@@ -98,37 +129,9 @@ export default function StickyHeadTable(props) {
           </TableBody>
         </Table>
       </TableContainer>
-      <Divider sx={{ marginY: "2rem" }} />
-      <TableContainer component={Paper}>
-        <Table sx={{ minWidth: 650 }} size="small" aria-label="a dense table">
-          <TableHead>
-            <TableRow>
-              <TableCell>Participant</TableCell>
-              <TableCell align="right">Count</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <TableRow
-              sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-            >
-              <TableCell component="th" scope="row">
-                Guest
-              </TableCell>
-              <TableCell align="right">{guest.length}</TableCell>
-            </TableRow>
-            <TableRow
-              sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-            >
-              <TableCell component="th" scope="row">
-                Saved
-              </TableCell>
-              <TableCell align="right">{saved.length}</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <Divider sx={{ marginY: "2rem" }} />
-      <TableContainer sx={{ maxHeight: "100vh" }}>
+
+      {/* <Divider sx={{ marginY: "2rem" }} /> */}
+      {/* <TableContainer sx={{ maxHeight: "100vh" }}>
         <Table stickyHeader aria-label="sticky table">
           <TableHead>
             <TableRow>
@@ -162,7 +165,7 @@ export default function StickyHeadTable(props) {
             })}
           </TableBody>
         </Table>
-      </TableContainer>
+      </TableContainer> */}
     </Paper>
   );
 }
