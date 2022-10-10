@@ -13,34 +13,34 @@ import { client } from "../service/sanityClient";
 import { fellowships } from "../data/fellowship";
 import { Divider } from "@mui/material";
 
-const columns = [
-  { id: "name", label: "Name", minWidth: 170 },
-  { id: "regNo", label: "Registration No.", minWidth: 100 },
-  {
-    id: "contact",
-    label: "Contact",
-    minWidth: 170,
-    align: "right",
-  },
-  {
-    id: "email",
-    label: "Email",
-    minWidth: 170,
-    align: "center",
-  },
-  {
-    id: "fellowshipName",
-    label: "Fellowship Name",
-    minWidth: 170,
-    align: "center",
-  },
-  {
-    id: "guestOrSaved",
-    label: "Guest/Saved",
-    minWidth: 170,
-    align: "center",
-  },
-];
+// const columns = [
+//   { id: "name", label: "Name", minWidth: 170 },
+//   { id: "regNo", label: "Registration No.", minWidth: 100 },
+//   {
+//     id: "contact",
+//     label: "Contact",
+//     minWidth: 170,
+//     align: "right",
+//   },
+//   {
+//     id: "email",
+//     label: "Email",
+//     minWidth: 170,
+//     align: "center",
+//   },
+//   {
+//     id: "fellowshipName",
+//     label: "Fellowship Name",
+//     minWidth: 170,
+//     align: "center",
+//   },
+//   {
+//     id: "guestOrSaved",
+//     label: "Guest/Saved",
+//     minWidth: 170,
+//     align: "center",
+//   },
+// ];
 
 export default function StickyHeadTable(props) {
   const { participant } = props;
@@ -48,48 +48,30 @@ export default function StickyHeadTable(props) {
   const saved = participant.filter((p) => p.guestOrSaved === "saved");
   const getFellowship = fellowships.map((fel) => {
     const getCount = participant.filter((p) => p.fellowshipName === fel);
-    return { fellowshipName: fel, count: getCount.length };
+    const getSaved = participant.filter(
+      (p) => p.fellowshipName === fel && p.guestOrSaved === "saved"
+    );
+    const getGuest = participant.filter(
+      (p) => p.fellowshipName === fel && p.guestOrSaved === "guest"
+    );
+    return {
+      fellowshipName: fel,
+      count: getCount.length,
+      saved: getSaved.length,
+      guest: getGuest.length,
+    };
   });
   const total = participant.length;
 
   return (
     <Paper sx={{ width: "100%", overflow: "hidden" }}>
-      <TableContainer component={Paper} sx={{ padding: "1rem" }}>
-        <Table sx={{ minWidth: 650 }} size="small" aria-label="a dense table">
-          <TableHead>
-            <TableRow>
-              <TableCell>Participant</TableCell>
-              <TableCell align="right">Count</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <TableRow
-              key="guest"
-              sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-            >
-              <TableCell component="th" scope="row">
-                Guest
-              </TableCell>
-              <TableCell align="right">{guest.length}</TableCell>
-            </TableRow>
-            <TableRow
-              key="saved"
-              sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-            >
-              <TableCell component="th" scope="row">
-                Saved
-              </TableCell>
-              <TableCell align="right">{saved.length}</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <Divider sx={{ marginY: "2rem" }} />
-      <TableContainer component={Paper} sx={{ padding: "1rem" }}>
-        <Table sx={{ minWidth: 650 }} size="small" aria-label="a dense table">
+      <TableContainer component={Paper} sx={{ maxHeight: "100vh" }}>
+        <Table stickyHeader aria-label="sticky table" size="small">
           <TableHead>
             <TableRow>
               <TableCell>Fellowship Name</TableCell>
+              <TableCell align="right">Guest</TableCell>
+              <TableCell align="right">Saved</TableCell>
               <TableCell align="right">Participants</TableCell>
             </TableRow>
           </TableHead>
@@ -102,6 +84,8 @@ export default function StickyHeadTable(props) {
                 <TableCell component="th" scope="row">
                   {row.fellowshipName}
                 </TableCell>
+                <TableCell align="right">{row.guest}</TableCell>
+                <TableCell align="right">{row.saved}</TableCell>
                 <TableCell align="right">{row.count}</TableCell>
               </TableRow>
             ))}
@@ -118,6 +102,18 @@ export default function StickyHeadTable(props) {
                 sx={{ fontWeight: "bold", fontSize: "1.5rem" }}
               >
                 Total
+              </TableCell>
+              <TableCell
+                align="right"
+                sx={{ fontWeight: "bold", fontSize: "1.5rem" }}
+              >
+                {guest.length}
+              </TableCell>
+              <TableCell
+                align="right"
+                sx={{ fontWeight: "bold", fontSize: "1.5rem" }}
+              >
+                {saved.length}
               </TableCell>
               <TableCell
                 align="right"
