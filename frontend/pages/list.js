@@ -10,6 +10,8 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { client } from "../service/sanityClient";
+import { fellowships } from "../data/fellowship";
+import { Divider } from "@mui/material";
 
 const columns = [
   { id: "name", label: "Name", minWidth: 170 },
@@ -42,15 +44,90 @@ const columns = [
 
 export default function StickyHeadTable(props) {
   const { participant } = props;
+  const guest = participant.filter((p) => p.guestOrSaved === "guest");
+  const saved = participant.filter((p) => p.guestOrSaved === "saved");
+  const getFellowship = fellowships.map((fel) => {
+    const getCount = participant.filter((p) => p.fellowshipName === fel);
+    return { fellowshipName: fel, count: getCount.length };
+  });
   const total = participant.length;
 
   return (
     <Paper sx={{ width: "100%", overflow: "hidden" }}>
-      <Box>
-        <Typography variant="h2" gutterBottom>
-          Total Participant: {total}
-        </Typography>
-      </Box>
+      <TableContainer component={Paper} sx={{ padding: "1rem" }}>
+        <Table sx={{ minWidth: 650 }} size="small" aria-label="a dense table">
+          <TableHead>
+            <TableRow>
+              <TableCell>Fellowship Name</TableCell>
+              <TableCell align="right">Participants</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {getFellowship.map((row) => (
+              <TableRow
+                key={row.fellowshipName}
+                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+              >
+                <TableCell component="th" scope="row">
+                  {row.fellowshipName}
+                </TableCell>
+                <TableCell align="right">{row.count}</TableCell>
+              </TableRow>
+            ))}
+
+            <TableRow
+              sx={{
+                "&:last-child td, &:last-child th": { border: 0 },
+                fontWeight: "bold",
+              }}
+            >
+              <TableCell
+                component="th"
+                scope="row"
+                sx={{ fontWeight: "bold", fontSize: "1.5rem" }}
+              >
+                Total
+              </TableCell>
+              <TableCell
+                align="right"
+                sx={{ fontWeight: "bold", fontSize: "1.5rem" }}
+              >
+                {total}
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <Divider sx={{ marginY: "2rem" }} />
+      <TableContainer component={Paper}>
+        <Table sx={{ minWidth: 650 }} size="small" aria-label="a dense table">
+          <TableHead>
+            <TableRow>
+              <TableCell>Participant</TableCell>
+              <TableCell align="right">Count</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            <TableRow
+              sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+            >
+              <TableCell component="th" scope="row">
+                Guest
+              </TableCell>
+              <TableCell align="right">{guest.length}</TableCell>
+            </TableRow>
+            <TableRow
+              sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+            >
+              <TableCell component="th" scope="row">
+                Saved
+              </TableCell>
+              <TableCell align="right">{saved.length}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <Divider sx={{ marginY: "2rem" }} />
       <TableContainer sx={{ maxHeight: "100vh" }}>
         <Table stickyHeader aria-label="sticky table">
           <TableHead>
@@ -67,8 +144,6 @@ export default function StickyHeadTable(props) {
             </TableRow>
           </TableHead>
           <TableBody>
-            {/* {participant
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) */}
             {participant.map((row) => {
               return (
                 <TableRow hover role="checkbox" tabIndex={-1} key={row._key}>
