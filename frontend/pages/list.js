@@ -2,7 +2,7 @@ import * as React from "react";
 import Paper from "@mui/material/Paper";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-
+import { DownloadTableExcel } from "react-export-table-to-excel";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -12,6 +12,11 @@ import TableRow from "@mui/material/TableRow";
 import { client } from "../service/sanityClient";
 import { fellowships } from "../data/fellowship";
 import { Divider } from "@mui/material";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormControl from "@mui/material/FormControl";
+import FormLabel from "@mui/material/FormLabel";
 
 // const columns = [
 //   { id: "name", label: "Name", minWidth: 170 },
@@ -63,8 +68,122 @@ export default function StickyHeadTable(props) {
   });
   const total = participant.length;
 
+  const tableRef = React.useRef(null);
+
+  const handleChangeGender = async (e, id) => {
+    await client
+      .patch(id) // Document ID to patch
+      .set({ gender: e.target.value }) // Increment field by count
+      .commit() // Perform the patch and return a promise
+      .then((updatedBike) => {
+        console.log("Hurray, the participant is updated! New document:");
+        console.log(updatedBike);
+      })
+      .catch((err) => {
+        console.error("Oh no, the update failed: ", err.message);
+      });
+  };
+  const handleChangeStatus = async (e, id) => {
+    await client
+      .patch(id) // Document ID to patch
+      .set({ guestOrSaved: e.target.value }) // Increment field by count
+      .commit() // Perform the patch and return a promise
+      .then((updatedBike) => {
+        console.log("Hurray, the participant is updated! New document:");
+        console.log(updatedBike);
+      })
+      .catch((err) => {
+        console.error("Oh no, the update failed: ", err.message);
+      });
+  };
+
   return (
     <Paper sx={{ width: "100%", overflow: "hidden" }}>
+      {fellowships.map((fel) => {
+        return (
+          <TableContainer component={Paper}>
+            <h2>{fel}</h2>
+            <Table aria-label="sticky table" size="small" ref={tableRef}>
+              <TableHead>
+                <TableRow>
+                  <TableCell> Name</TableCell>
+                  <TableCell align="right">Fellowship Name</TableCell>
+                  <TableCell align="right">Contact</TableCell>
+                  <TableCell align="right">Invited By</TableCell>
+                  <TableCell align="center">Gender</TableCell>
+                  <TableCell align="center">Guest/Saved</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {participant
+                  .filter((p) => p.fellowshipName === fel)
+                  .map((row) => (
+                    <TableRow
+                      key={row._key}
+                      sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                    >
+                      <TableCell component="th" scope="row">
+                        {row.name}
+                      </TableCell>
+                      <TableCell align="right">{row.fellowshipName}</TableCell>
+                      <TableCell align="right">{row.contact}</TableCell>
+                      <TableCell align="right">{row.invitedBy}</TableCell>
+                      <TableCell align="left">
+                        <FormControl>
+                          <RadioGroup
+                            aria-labelledby="demo-radio-buttons-group-label"
+                            onChange={(e) => handleChangeGender(e, row._id)}
+                            defaultValue={row.gender}
+                            name="radio-buttons-group"
+                            row
+                          >
+                            <FormControlLabel
+                              value="female"
+                              fontSize="1rem"
+                              control={<Radio />}
+                              label="Female"
+                            />
+                            <FormControlLabel
+                              value="male"
+                              control={<Radio />}
+                              label="Male"
+                              fontSize="1rem"
+                            />
+                          </RadioGroup>
+                        </FormControl>
+                      </TableCell>
+                      <TableCell align="right">
+                        <FormControl>
+                          <RadioGroup
+                            aria-labelledby="demo-radio-buttons-group-label"
+                            defaultValue={row.guestOrSaved}
+                            onChange={(e) => handleChangeStatus(e, row._id)}
+                            name="radio-buttons-group"
+                            row
+                          >
+                            <FormControlLabel
+                              value="guest"
+                              fontSize="1rem"
+                              control={<Radio />}
+                              label="Guest"
+                            />
+                            <FormControlLabel
+                              value="saved"
+                              control={<Radio />}
+                              label="Saved"
+                              fontSize="1rem"
+                            />
+                          </RadioGroup>
+                        </FormControl>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        );
+      })}
+
       <TableContainer component={Paper} sx={{ maxHeight: "100vh" }}>
         <Table stickyHeader aria-label="sticky table" size="small">
           <TableHead>
@@ -78,7 +197,7 @@ export default function StickyHeadTable(props) {
           <TableBody>
             {getFellowship.map((row) => (
               <TableRow
-                key={row.fellowshipName}
+                key={row._key}
                 sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
               >
                 <TableCell component="th" scope="row">
