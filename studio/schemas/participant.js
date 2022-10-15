@@ -79,6 +79,18 @@ export default {
       },
     },
     {
+      name: "present",
+      title: "Present/Absent",
+      type: "string",
+      options: {
+        list: [
+          { title: "Present", value: "present" },
+          { title: "Absent", value: "absent" },
+        ],
+        layout: "radio",
+      },
+    },
+    {
       name: "image",
       title: "Image",
       type: "image",

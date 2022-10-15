@@ -96,12 +96,25 @@ export default function StickyHeadTable(props) {
         console.error("Oh no, the update failed: ", err.message);
       });
   };
+  const handleChangePresent = async (e, id) => {
+    await client
+      .patch(id) // Document ID to patch
+      .set({ present: e.target.value }) // Increment field by count
+      .commit() // Perform the patch and return a promise
+      .then((updatedBike) => {
+        console.log("Hurray, the participant is updated! New document:");
+        console.log(updatedBike);
+      })
+      .catch((err) => {
+        console.error("Oh no, the update failed: ", err.message);
+      });
+  };
 
   return (
     <Paper sx={{ width: "100%", overflow: "hidden" }}>
       {fellowships.map((fel) => {
         return (
-          <TableContainer component={Paper}>
+          <TableContainer key={fel} component={Paper}>
             <h2>{fel}</h2>
             <Table aria-label="sticky table" size="small" ref={tableRef}>
               <TableHead>
@@ -119,7 +132,7 @@ export default function StickyHeadTable(props) {
                   .filter((p) => p.fellowshipName === fel)
                   .map((row) => (
                     <TableRow
-                      key={row._key}
+                      key={row._id}
                       sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
                     >
                       <TableCell component="th" scope="row">
@@ -176,6 +189,30 @@ export default function StickyHeadTable(props) {
                           </RadioGroup>
                         </FormControl>
                       </TableCell>
+                      <TableCell align="right">
+                        <FormControl>
+                          <RadioGroup
+                            aria-labelledby="demo-radio-buttons-group-label"
+                            defaultValue={row.present}
+                            onChange={(e) => handleChangePresent(e, row._id)}
+                            name="radio-buttons-group"
+                            row
+                          >
+                            <FormControlLabel
+                              value="present"
+                              fontSize="1rem"
+                              control={<Radio />}
+                              label="Present"
+                            />
+                            <FormControlLabel
+                              value="absent"
+                              control={<Radio />}
+                              label="Absent"
+                              fontSize="1rem"
+                            />
+                          </RadioGroup>
+                        </FormControl>
+                      </TableCell>
                     </TableRow>
                   ))}
               </TableBody>
@@ -183,9 +220,9 @@ export default function StickyHeadTable(props) {
           </TableContainer>
         );
       })}
-
-      <TableContainer component={Paper} sx={{ maxHeight: "100vh" }}>
-        <Table stickyHeader aria-label="sticky table" size="small">
+      <Divider sx={{ mt: "2rem" }} />
+      <TableContainer component={Paper}>
+        <Table aria-label="sticky table">
           <TableHead>
             <TableRow>
               <TableCell>Fellowship Name</TableCell>
@@ -195,9 +232,9 @@ export default function StickyHeadTable(props) {
             </TableRow>
           </TableHead>
           <TableBody>
-            {getFellowship.map((row) => (
+            {getFellowship.map((row, index) => (
               <TableRow
-                key={row._key}
+                key={index}
                 sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
               >
                 <TableCell component="th" scope="row">
@@ -210,6 +247,7 @@ export default function StickyHeadTable(props) {
             ))}
 
             <TableRow
+              key="akjsdhnaksdnla-aslkjdjalsd"
               sx={{
                 "&:last-child td, &:last-child th": { border: 0 },
                 fontWeight: "bold",
