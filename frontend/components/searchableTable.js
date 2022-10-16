@@ -19,10 +19,9 @@ const SearchableTable = ({ participants, fellowship }) => {
     const filteredRows = participants.filter((row) => {
       return (
         row.name.toLowerCase().includes(searchedVal.toLowerCase()) ||
-        row.invitedBy.toLowerCase().includes(searchedVal.toLowerCase()) ||
         row.contact.includes(searchedVal) ||
-        row.gender.includes(searchedVal.toLowerCase()) ||
-        row.guestOrSaved.includes(searchedVal.toLowerCase())
+        row.gender === searchedVal.toLowerCase() ||
+        row.guestOrSaved === searchedVal.toLowerCase()
       );
     });
     setRows(filteredRows);
