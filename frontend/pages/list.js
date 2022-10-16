@@ -1,8 +1,5 @@
 import * as React from "react";
 import Paper from "@mui/material/Paper";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import { DownloadTableExcel } from "react-export-table-to-excel";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -16,48 +13,30 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
-
-// const columns = [
-//   { id: "name", label: "Name", minWidth: 170 },
-//   { id: "regNo", label: "Registration No.", minWidth: 100 },
-//   {
-//     id: "contact",
-//     label: "Contact",
-//     minWidth: 170,
-//     align: "right",
-//   },
-//   {
-//     id: "email",
-//     label: "Email",
-//     minWidth: 170,
-//     align: "center",
-//   },
-//   {
-//     id: "fellowshipName",
-//     label: "Fellowship Name",
-//     minWidth: 170,
-//     align: "center",
-//   },
-//   {
-//     id: "guestOrSaved",
-//     label: "Guest/Saved",
-//     minWidth: 170,
-//     align: "center",
-//   },
-// ];
 
 export default function StickyHeadTable(props) {
   const { participant } = props;
-  const guest = participant.filter((p) => p.guestOrSaved === "guest");
-  const saved = participant.filter((p) => p.guestOrSaved === "saved");
+  const guest = participant.filter(
+    (p) => p.guestOrSaved === "guest" && p.present == "present"
+  );
+  const saved = participant.filter(
+    (p) => p.guestOrSaved === "saved" && p.present == "present"
+  );
   const getFellowship = fellowships.map((fel) => {
-    const getCount = participant.filter((p) => p.fellowshipName === fel);
+    const getCount = participant.filter(
+      (p) => p.fellowshipName === fel && p.present == "present"
+    );
     const getSaved = participant.filter(
-      (p) => p.fellowshipName === fel && p.guestOrSaved === "saved"
+      (p) =>
+        p.fellowshipName === fel &&
+        p.guestOrSaved === "saved" &&
+        p.present == "present"
     );
     const getGuest = participant.filter(
-      (p) => p.fellowshipName === fel && p.guestOrSaved === "guest"
+      (p) =>
+        p.fellowshipName === fel &&
+        p.guestOrSaved === "guest" &&
+        p.present == "present"
     );
     return {
       fellowshipName: fel,
@@ -66,7 +45,7 @@ export default function StickyHeadTable(props) {
       guest: getGuest.length,
     };
   });
-  const total = participant.length;
+  const total = participant.filter((p) => p.present == "present").length;
 
   const tableRef = React.useRef(null);
 
@@ -125,6 +104,7 @@ export default function StickyHeadTable(props) {
                   <TableCell align="right">Invited By</TableCell>
                   <TableCell align="center">Gender</TableCell>
                   <TableCell align="center">Guest/Saved</TableCell>
+                  <TableCell align="center">Present/Absent</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
