@@ -28,7 +28,8 @@
     "react": "latest",
     "react-dom": "latest",
     "react-export-table-to-excel": "^1.0.6",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "eslint": "latest",
