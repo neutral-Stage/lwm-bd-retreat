@@ -78,6 +78,7 @@ export default function Index() {
     fellowshipName: "Dhaka Church",
     birthDate: convertDate(new Date()),
     guestOrSaved: "guest",
+    gender: "",
     invitedBy: "",
     image: null,
   };
@@ -149,6 +150,8 @@ export default function Index() {
       fellowshipName: fellowshipName,
       birthDate: values.birthDate,
       guestOrSaved: data.get("guestOrSaved"),
+      gender: data.get("gender"),
+      present: "present",
     };
 
     await client.create(form).then((res) => {
@@ -338,6 +341,27 @@ export default function Index() {
                     onChange={(newValue) => handleDate(newValue._d)}
                     renderInput={(params) => <TextField {...params} />}
                   />
+                </Grid>
+                <Grid item xs={12}>
+                  <RadioGroup
+                    row
+                    aria-labelledby="demo-radio-buttons-group-label"
+                    defaultValue="guest"
+                    value={values.gender}
+                    onChange={(e) => handleInputChange(e)}
+                    name="gender"
+                  >
+                    <FormControlLabel
+                      value="male"
+                      control={<Radio />}
+                      label="Male"
+                    />
+                    <FormControlLabel
+                      value="female"
+                      control={<Radio />}
+                      label="Female"
+                    />
+                  </RadioGroup>
                 </Grid>
                 <Grid item xs={12}>
                   <RadioGroup

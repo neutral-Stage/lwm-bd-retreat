@@ -22,6 +22,14 @@ export default function StickyHeadTable(props) {
   const saved = participant.filter(
     (p) => p.guestOrSaved === "saved" && p.present == "present"
   );
+  const male = participant.filter(
+    (p) => p.gender === "male" && p.present == "present"
+  );
+  const female = participant.filter(
+    (p) => p.gender === "female" && p.present == "present"
+  );
+  const present = participant.filter((p) => p.present === "present");
+  const absent = participant.filter((p) => p.present === "absent");
   const getFellowship = fellowships.map((fel) => {
     const getCount = participant.filter(
       (p) => p.fellowshipName === fel && p.present == "present"
@@ -38,11 +46,33 @@ export default function StickyHeadTable(props) {
         p.guestOrSaved === "guest" &&
         p.present == "present"
     );
+    const getMale = participant.filter(
+      (p) =>
+        p.fellowshipName === fel &&
+        p.gender === "male" &&
+        p.present == "present"
+    );
+    const getFemale = participant.filter(
+      (p) =>
+        p.fellowshipName === fel &&
+        p.gender === "female" &&
+        p.present == "present"
+    );
+    const getPresent = participant.filter(
+      (p) => p.fellowshipName === fel && p.present == "present"
+    );
+    const getAbsent = participant.filter(
+      (p) => p.fellowshipName === fel && p.present == "absent"
+    );
     return {
       fellowshipName: fel,
       count: getCount.length,
       saved: getSaved.length,
       guest: getGuest.length,
+      female: getFemale.length,
+      male: getMale.length,
+      present: getPresent.length,
+      absent: getAbsent.length,
     };
   });
   const total = participant.filter((p) => p.present == "present").length;
@@ -91,6 +121,100 @@ export default function StickyHeadTable(props) {
 
   return (
     <Paper sx={{ width: "100%", overflow: "hidden" }}>
+      <TableContainer component={Paper}>
+        <Table aria-label="sticky table">
+          <TableHead>
+            <TableRow>
+              <TableCell>Fellowship Name</TableCell>
+              <TableCell align="center">Male (Present)</TableCell>
+              <TableCell align="center">Female (Present)</TableCell>
+              <TableCell align="center">Present</TableCell>
+              <TableCell align="center">Absent</TableCell>
+              <TableCell align="center">Guest (Present)</TableCell>
+              <TableCell align="center">Saved (Present)</TableCell>
+              <TableCell align="center">Participants (Present)</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {getFellowship.map((row, index) => (
+              <TableRow
+                key={index}
+                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+              >
+                <TableCell component="th" scope="row">
+                  {row.fellowshipName}
+                </TableCell>
+                <TableCell align="center">{row.male}</TableCell>
+                <TableCell align="center">{row.female}</TableCell>
+                <TableCell align="center">{row.present}</TableCell>
+                <TableCell align="center">{row.absent}</TableCell>
+                <TableCell align="center">{row.guest}</TableCell>
+                <TableCell align="center">{row.saved}</TableCell>
+                <TableCell align="center">{row.count}</TableCell>
+              </TableRow>
+            ))}
+
+            <TableRow
+              key="akjsdhnaksdnla-aslkjdjalsd"
+              sx={{
+                "&:last-child td, &:last-child th": { border: 0 },
+                fontWeight: "bold",
+              }}
+            >
+              <TableCell
+                component="th"
+                scope="row"
+                sx={{ fontWeight: "bold", fontSize: "1.5rem" }}
+              >
+                Total
+              </TableCell>
+              <TableCell
+                align="center"
+                sx={{ fontWeight: "bold", fontSize: "1.5rem" }}
+              >
+                {male.length}
+              </TableCell>
+              <TableCell
+                align="center"
+                sx={{ fontWeight: "bold", fontSize: "1.5rem" }}
+              >
+                {female.length}
+              </TableCell>
+              <TableCell
+                align="center"
+                sx={{ fontWeight: "bold", fontSize: "1.5rem" }}
+              >
+                {present.length}
+              </TableCell>
+              <TableCell
+                align="center"
+                sx={{ fontWeight: "bold", fontSize: "1.5rem" }}
+              >
+                {absent.length}
+              </TableCell>
+              <TableCell
+                align="center"
+                sx={{ fontWeight: "bold", fontSize: "1.5rem" }}
+              >
+                {guest.length}
+              </TableCell>
+              <TableCell
+                align="center"
+                sx={{ fontWeight: "bold", fontSize: "1.5rem" }}
+              >
+                {saved.length}
+              </TableCell>
+              <TableCell
+                align="center"
+                sx={{ fontWeight: "bold", fontSize: "1.5rem" }}
+              >
+                {total}
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <Divider sx={{ mt: "2rem" }} />
       {fellowships.map((fel) => {
         return (
           <TableContainer key={fel} component={Paper}>
@@ -200,68 +324,6 @@ export default function StickyHeadTable(props) {
           </TableContainer>
         );
       })}
-      <Divider sx={{ mt: "2rem" }} />
-      <TableContainer component={Paper}>
-        <Table aria-label="sticky table">
-          <TableHead>
-            <TableRow>
-              <TableCell>Fellowship Name</TableCell>
-              <TableCell align="right">Guest</TableCell>
-              <TableCell align="right">Saved</TableCell>
-              <TableCell align="right">Participants</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {getFellowship.map((row, index) => (
-              <TableRow
-                key={index}
-                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-              >
-                <TableCell component="th" scope="row">
-                  {row.fellowshipName}
-                </TableCell>
-                <TableCell align="right">{row.guest}</TableCell>
-                <TableCell align="right">{row.saved}</TableCell>
-                <TableCell align="right">{row.count}</TableCell>
-              </TableRow>
-            ))}
-
-            <TableRow
-              key="akjsdhnaksdnla-aslkjdjalsd"
-              sx={{
-                "&:last-child td, &:last-child th": { border: 0 },
-                fontWeight: "bold",
-              }}
-            >
-              <TableCell
-                component="th"
-                scope="row"
-                sx={{ fontWeight: "bold", fontSize: "1.5rem" }}
-              >
-                Total
-              </TableCell>
-              <TableCell
-                align="right"
-                sx={{ fontWeight: "bold", fontSize: "1.5rem" }}
-              >
-                {guest.length}
-              </TableCell>
-              <TableCell
-                align="right"
-                sx={{ fontWeight: "bold", fontSize: "1.5rem" }}
-              >
-                {saved.length}
-              </TableCell>
-              <TableCell
-                align="right"
-                sx={{ fontWeight: "bold", fontSize: "1.5rem" }}
-              >
-                {total}
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </TableContainer>
 
       {/* <Divider sx={{ marginY: "2rem" }} /> */}
       {/* <TableContainer sx={{ maxHeight: "100vh" }}>

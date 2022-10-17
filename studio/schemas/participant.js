@@ -5,7 +5,9 @@ export default {
   title: "Participant",
   type: "document",
   icon: BsPeopleFill,
-
+  initialValue: {
+    present: "present",
+  },
   fields: [
     {
       name: "regNo",
