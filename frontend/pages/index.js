@@ -72,13 +72,10 @@ export default function Index() {
 
   const initialValues = {
     name: "",
-    email: "",
     contact: "",
-    address: "",
-    fellowshipName: "Dhaka Church",
-    birthDate: convertDate(new Date()),
-    guestOrSaved: "guest",
-    invitedBy: "",
+    gender: "male",
+    fellowshipName: "",
+    salvationDate: convertDate(new Date()),
     image: null,
   };
   const [values, setValues] = useState(initialValues);
@@ -114,7 +111,7 @@ export default function Index() {
     const format = convertDate(newValue);
     setValues({
       ...values,
-      birthDate: format,
+      salvationDate: format,
     });
     setDate(newValue);
   };
@@ -142,13 +139,10 @@ export default function Index() {
       _type: "participant",
       regNo: regNo,
       name: data.get("name"),
-      email: data.get("email"),
       contact: data.get("contact"),
-      address: data.get("address"),
-      invitedBy: data.get("invitedBy"),
+      gender: data.get("gender"),
       fellowshipName: fellowshipName,
-      birthDate: values.birthDate,
-      guestOrSaved: data.get("guestOrSaved"),
+      salvationDate: values.salvationDate,
     };
 
     await client.create(form).then((res) => {
@@ -237,12 +231,12 @@ export default function Index() {
               Bangladesh Life Word Mission Retreat Form
             </Typography>
             <Typography component="h1" variant="overline" align="center">
-              October 21-23, 2022
+              March 21-23, 2022
             </Typography>
-            <Box>
+            {/* <Box>
               <Typography>We are closed now!</Typography>
-            </Box>
-            {/* <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
+            </Box> */}
+            <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <TextField
@@ -262,17 +256,6 @@ export default function Index() {
                   <TextField
                     required
                     fullWidth
-                    id="email"
-                    label="Email"
-                    name="email"
-                    autoComplete="off"
-                    onChange={(e) => handleInputChange(e)}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    required
-                    fullWidth
                     id="phone"
                     label="Phone"
                     name="contact"
@@ -282,30 +265,26 @@ export default function Index() {
                   />
                 </Grid>
                 <Grid item xs={12}>
-                  <TextField
+                  <RadioGroup
+                    row
                     required
-                    fullWidth
-                    id="address"
-                    label="Address"
-                    name="address"
-                    autoComplete="off"
-                    value={values.address}
+                    aria-labelledby="demo-radio-buttons-group-label"
+                    value={values.gender}
                     onChange={(e) => handleInputChange(e)}
-                  />
+                    name="gender"
+                  >
+                    <FormControlLabel
+                      value="male"
+                      control={<Radio />}
+                      label="Male"
+                    />
+                    <FormControlLabel
+                      value="female"
+                      control={<Radio />}
+                      label="Female"
+                    />
+                  </RadioGroup>
                 </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    required
-                    fullWidth
-                    id="invitedBy"
-                    label="Invited By"
-                    name="invitedBy"
-                    autoComplete="off"
-                    value={values.invitedBy}
-                    onChange={(e) => handleInputChange(e)}
-                  />
-                </Grid>
-
                 <Grid item xs={12}>
                   <FormControl fullWidth>
                     <InputLabel id="demo-simple-select-helper-label">
@@ -318,6 +297,7 @@ export default function Index() {
                       name="fellowshipName"
                       onChange={(e) => handleInputChange(e)}
                       value={values.fellowshipName ?? "Dhaka Church"}
+                      required
                     >
                       {fellowships.map((fellowship, i) => {
                         return (
@@ -331,34 +311,14 @@ export default function Index() {
                 </Grid>
                 <Grid item xs={12}>
                   <MobileDatePicker
-                    label="Birth Date"
-                    name="birthDate"
+                    label="Salvation Date"
+                    name="salvationDate"
                     inputFormat="DD/MM/yyyy"
                     value={date}
                     onChange={(newValue) => handleDate(newValue._d)}
                     renderInput={(params) => <TextField {...params} />}
+                    required
                   />
-                </Grid>
-                <Grid item xs={12}>
-                  <RadioGroup
-                    row
-                    aria-labelledby="demo-radio-buttons-group-label"
-                    defaultValue="guest"
-                    value={values.guestOrSaved}
-                    onChange={(e) => handleInputChange(e)}
-                    name="guestOrSaved"
-                  >
-                    <FormControlLabel
-                      value="guest"
-                      control={<Radio />}
-                      label="Guest"
-                    />
-                    <FormControlLabel
-                      value="saved"
-                      control={<Radio />}
-                      label="Saved"
-                    />
-                  </RadioGroup>
                 </Grid>
               </Grid>
               <Grid item xs={12}>
@@ -416,7 +376,7 @@ export default function Index() {
               >
                 Submit
               </Button>
-            </Box> */}
+            </Box>
           </Box>
           <Copyright sx={{ mt: 5 }} />
         </Container>
