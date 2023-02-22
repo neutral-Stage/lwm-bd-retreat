@@ -231,7 +231,7 @@ export default function Index() {
               Bangladesh Life Word Mission Retreat Form
             </Typography>
             <Typography component="h1" variant="overline" align="center">
-              March 21-23, 2022
+              March 24-26, 2023
             </Typography>
             {/* <Box>
               <Typography>We are closed now!</Typography>
