@@ -9,28 +9,36 @@ import TableRow from "@mui/material/TableRow";
 import { client } from "../service/sanityClient";
 import { fellowships } from "../data/fellowship";
 import { Divider, Typography } from "@mui/material";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
 
-export default function StickyHeadTable(props) {
-  const { participant } = props;
-  const male = participant.filter((p) => p.gender === "male");
-  const female = participant.filter((p) => p.gender === "female");
-  const getFellowship = fellowships.map((fel) => {
-    const getCount = participant.filter((p) => p.fellowshipName === fel);
+export default function Room(props) {
+  const { participant, room } = props;
 
-    const getMale = participant.filter(
-      (p) => p.fellowshipName === fel && p.gender === "male"
-    );
-    const getFemale = participant.filter(
-      (p) => p.fellowshipName === fel && p.gender === "female"
-    );
-    return {
-      fellowshipName: fel,
-      count: getCount.length,
-      male: getMale.length,
-      female: getFemale.length,
-    };
-  });
-  const total = participant.length;
+  const totalCapacity = room.reduce(
+    (previousValue, currentValue) => previousValue + currentValue.capacity,
+    0
+  );
+  const totalBooked = room.reduce(
+    (previousValue, currentValue) => previousValue + currentValue.booked,
+    0
+  );
+
+  const handleChangeRoom = async (e, id) => {
+    const value = e.target.value;
+    if (value && value !== "none")
+      await client
+        .patch(id) // Document ID to patch
+        .set({ roomNo: { _ref: e.target.value, _type: "reference" } }) // Increment field by count
+        .commit() // Perform the patch and return a promise
+        .then((updatedBike) => {
+          console.log("Hurray, the participant is updated! New document:");
+          console.log(updatedBike);
+        })
+        .catch((err) => {
+          console.error("Oh no, the update failed: ", err.message);
+        });
+  };
 
   const tableRef = React.useRef(null);
 
@@ -49,24 +57,26 @@ export default function StickyHeadTable(props) {
         <Table aria-label="sticky table" size="small">
           <TableHead>
             <TableRow>
-              <TableCell>Fellowship Name</TableCell>
-              <TableCell align="center">Male</TableCell>
-              <TableCell align="center">Female</TableCell>
+              <TableCell>Room No</TableCell>
+              <TableCell align="center">Capacity</TableCell>
+              <TableCell align="center">Available Room</TableCell>
               <TableCell align="center">Participants</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {getFellowship.map((row, index) => (
+            {room.map((row, index) => (
               <TableRow
                 key={index}
                 sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
               >
                 <TableCell component="th" scope="row">
-                  {row.fellowshipName}
+                  {row.roomNo}
                 </TableCell>
-                <TableCell align="center">{row.male}</TableCell>
-                <TableCell align="center">{row.female}</TableCell>
-                <TableCell align="center">{row.count}</TableCell>
+                <TableCell align="center">{row.capacity}</TableCell>
+                <TableCell align="center">
+                  {row.capacity - row.booked}
+                </TableCell>
+                <TableCell align="center">{row.booked}</TableCell>
               </TableRow>
             ))}
 
@@ -88,19 +98,19 @@ export default function StickyHeadTable(props) {
                 align="center"
                 sx={{ fontWeight: "bold", fontSize: "1.5rem" }}
               >
-                {male.length}
+                {totalCapacity}
               </TableCell>
               <TableCell
                 align="center"
                 sx={{ fontWeight: "bold", fontSize: "1.5rem" }}
               >
-                {female.length}
+                {totalCapacity - totalBooked}
               </TableCell>
               <TableCell
                 align="center"
                 sx={{ fontWeight: "bold", fontSize: "1.5rem" }}
               >
-                {total}
+                {totalBooked}
               </TableCell>
             </TableRow>
           </TableBody>
@@ -120,7 +130,7 @@ export default function StickyHeadTable(props) {
             component={Paper}
             sx={{
               p: 4,
-              maxWidth: "40rem",
+              maxWidth: "60rem",
               my: 4,
               mx: "auto",
               boxShadow: "0px 0px 8px 8px rgba(0, 0, 0,0.2)",
@@ -140,6 +150,8 @@ export default function StickyHeadTable(props) {
                   <TableCell> Name</TableCell>
                   <TableCell align="right">Contact</TableCell>
                   <TableCell align="right">Gender</TableCell>
+                  <TableCell align="right">Room</TableCell>
+                  <TableCell align="right">Select Room</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -153,6 +165,31 @@ export default function StickyHeadTable(props) {
                     </TableCell>
                     <TableCell align="right">{row.contact}</TableCell>
                     <TableCell align="right">{row.gender}</TableCell>
+                    <TableCell align="right">{row.roomNo ?? ""}</TableCell>
+                    <TableCell align="right">
+                      <Select
+                        labelId="demo-simple-select-helper-label"
+                        id="demo-simple-select-helper"
+                        label="Fellowship Name"
+                        name="fellowshipName"
+                        value={row.roomNo ?? "none"}
+                        onChange={(e) => handleChangeRoom(e, row._id)}
+                      >
+                        <MenuItem value="none">No Room Selected </MenuItem>
+                        {room.map((r) => {
+                          return (
+                            <MenuItem
+                              key={r._id}
+                              value={r.roomNo}
+                              disabled={r.capacity === r.booked}
+                            >
+                              Room No: {r.roomNo} , Capacity: {r.capacity} ,
+                              Available: {r.capacity - r.booked}
+                            </MenuItem>
+                          );
+                        })}
+                      </Select>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -168,11 +205,15 @@ export async function getStaticProps() {
   // It's important to default the slug so that it doesn't return "undefined"
   // const { slug = "" } = context.params
   const participant = await client.fetch(
-    '*[_type == "participant"]| order(_createdAt desc)'
+    '*[_type == "participant" && gender == "female"]{...,"roomNo":roomNo->roomNo}| order(_createdAt desc)'
+  );
+  const room = await client.fetch(
+    '*[_type == "roomNo" ]{_id,capacity,roomNo, "booked": count(*[_type == "participant" && roomNo._ref == ^._id]) }| order(roomNo desc)'
   );
   return {
     props: {
       participant,
+      room,
     },
   };
 }

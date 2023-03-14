@@ -44,11 +44,10 @@ const SearchableTable = ({ participants, fellowship }) => {
         "Registration No.": regNo,
         Name: p.name,
         Phone: p.contact,
-        "Invited By": p.invitedBy,
         "Birth Date": p.birthDate,
         Gender: p.gender,
-        "Guest/Saved": p.guestOrSaved,
         Present: p.present,
+        RoomNo: p.roomNo,
       };
     });
     const workSheet = XLSX.utils.json_to_sheet(newData);
@@ -92,10 +91,8 @@ const SearchableTable = ({ participants, fellowship }) => {
                 <TableCell>Registration No.</TableCell>
                 <TableCell>Name</TableCell>
                 <TableCell align="right">Phone</TableCell>
-                <TableCell align="right">Invited By</TableCell>
                 <TableCell align="right">Male/Female</TableCell>
-                <TableCell align="right">Guest/Saved</TableCell>
-                <TableCell align="right">Present/Absent</TableCell>
+                <TableCell align="center">Room No.</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -109,7 +106,6 @@ const SearchableTable = ({ participants, fellowship }) => {
                     <TableCell>{regNo}</TableCell>
                     <TableCell>{row.name}</TableCell>
                     <TableCell align="right">{row.contact}</TableCell>
-                    <TableCell align="right">{row.invitedBy}</TableCell>
                     <TableCell
                       align="right"
                       sx={{ textTransform: "capitalize" }}
@@ -117,16 +113,10 @@ const SearchableTable = ({ participants, fellowship }) => {
                       {row.gender}
                     </TableCell>
                     <TableCell
-                      align="right"
+                      align="center"
                       sx={{ textTransform: "capitalize" }}
                     >
-                      {row.guestOrSaved}
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      sx={{ textTransform: "capitalize" }}
-                    >
-                      {row.present}
+                      {row.roomNo}
                     </TableCell>
                   </TableRow>
                 );

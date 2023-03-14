@@ -77,9 +77,10 @@ export default {
       type: "blockContent",
     },
     {
-      name: "roomNo",
       title: "Room No",
-      type: "number",
+      name: "roomNo",
+      type: "reference",
+      to: [{ type: "roomNo" }],
     },
   ],
   preview: {
