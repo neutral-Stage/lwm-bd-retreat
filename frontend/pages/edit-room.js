@@ -344,5 +344,6 @@ export async function getStaticProps() {
     props: {
       room,
     },
+    revalidate: 10,
   };
 }

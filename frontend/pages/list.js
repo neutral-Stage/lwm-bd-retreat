@@ -174,5 +174,6 @@ export async function getStaticProps() {
     props: {
       participant,
     },
+    revalidate: 10,
   };
 }

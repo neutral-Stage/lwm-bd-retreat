@@ -193,5 +193,6 @@ export async function getStaticProps() {
       participant,
       room,
     },
+    revalidate: 10,
   };
 }
