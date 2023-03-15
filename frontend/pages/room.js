@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useState, useRef } from "react";
 import Paper from "@mui/material/Paper";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -9,38 +9,31 @@ import TableRow from "@mui/material/TableRow";
 import { client } from "../service/sanityClient";
 import { fellowships } from "../data/fellowship";
 import { Divider, Typography } from "@mui/material";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
+import RoomSelection from "../components/RoomSelection";
 
 export default function Room(props) {
   const { participant, room } = props;
 
-  const totalCapacity = room.reduce(
+  const [participantState, setParticipantState] = useState(participant);
+  const [roomState, setRoomState] = useState(room);
+
+  const totalCapacity = roomState.reduce(
     (previousValue, currentValue) => previousValue + currentValue.capacity,
     0
   );
-  const totalBooked = room.reduce(
+  const totalBooked = roomState.reduce(
     (previousValue, currentValue) => previousValue + currentValue.booked,
     0
   );
 
-  const handleChangeRoom = async (e, id) => {
-    const value = e.target.value;
-    if (value && value !== "none")
-      await client
-        .patch(id) // Document ID to patch
-        .set({ roomNo: { _ref: e.target.value, _type: "reference" } }) // Increment field by count
-        .commit() // Perform the patch and return a promise
-        .then((updatedBike) => {
-          console.log("Hurray, the participant is updated! New document:");
-          console.log(updatedBike);
-        })
-        .catch((err) => {
-          console.error("Oh no, the update failed: ", err.message);
-        });
+  const handleParticipant = (data) => {
+    setParticipantState(data);
+  };
+  const handleRoom = (data) => {
+    setRoomState(data);
   };
 
-  const tableRef = React.useRef(null);
+  const tableRef = useRef(null);
 
   return (
     <Paper sx={{ width: "100%", overflow: "hidden" }}>
@@ -118,7 +111,7 @@ export default function Room(props) {
       </TableContainer>
       <Divider sx={{ mt: "2rem" }} />
       {fellowships.map((fel) => {
-        const participantsByFel = participant.filter(
+        const participantsByFel = participantState.filter(
           (p) => p.fellowshipName === fel
         );
         if (participantsByFel.length === 0) {
@@ -147,7 +140,7 @@ export default function Room(props) {
             >
               <TableHead>
                 <TableRow>
-                  <TableCell> Name</TableCell>
+                  <TableCell>Name</TableCell>
                   <TableCell align="right">Contact</TableCell>
                   <TableCell align="right">Gender</TableCell>
                   <TableCell align="right">Room</TableCell>
@@ -165,30 +158,15 @@ export default function Room(props) {
                     </TableCell>
                     <TableCell align="right">{row.contact}</TableCell>
                     <TableCell align="right">{row.gender}</TableCell>
-                    <TableCell align="right">{row.roomNo ?? ""}</TableCell>
+                    <TableCell align="right">{row.room ?? ""}</TableCell>
                     <TableCell align="right">
-                      <Select
-                        labelId="demo-simple-select-helper-label"
-                        id="demo-simple-select-helper"
-                        label="Fellowship Name"
-                        name="fellowshipName"
-                        value={row.roomNo ?? "none"}
-                        onChange={(e) => handleChangeRoom(e, row._id)}
-                      >
-                        <MenuItem value="none">No Room Selected </MenuItem>
-                        {room.map((r) => {
-                          return (
-                            <MenuItem
-                              key={r._id}
-                              value={r.roomNo}
-                              disabled={r.capacity === r.booked}
-                            >
-                              Room No: {r.roomNo} , Capacity: {r.capacity} ,
-                              Available: {r.capacity - r.booked}
-                            </MenuItem>
-                          );
-                        })}
-                      </Select>
+                      <RoomSelection
+                        value={row?.roomNo?._ref}
+                        room={roomState}
+                        id={row._id}
+                        handleParticipant={handleParticipant}
+                        handleRoom={handleRoom}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -205,7 +183,7 @@ export async function getStaticProps() {
   // It's important to default the slug so that it doesn't return "undefined"
   // const { slug = "" } = context.params
   const participant = await client.fetch(
-    '*[_type == "participant" && gender == "female"]{...,"roomNo":roomNo->roomNo}| order(_createdAt desc)'
+    '*[_type == "participant" && gender == "female"]{...,"room":roomNo->roomNo}| order(_createdAt desc)'
   );
   const room = await client.fetch(
     '*[_type == "roomNo" ]{_id,capacity,roomNo, "booked": count(*[_type == "participant" && roomNo._ref == ^._id]) }| order(roomNo desc)'
