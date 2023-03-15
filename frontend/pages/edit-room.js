@@ -23,7 +23,6 @@ import Stack from "@mui/material/Stack";
 
 export default function EditRoom(props) {
   const { room } = props;
-
   const style = {
     position: "absolute",
     top: "50%",
@@ -42,9 +41,7 @@ export default function EditRoom(props) {
 
   const [values, setValues] = useState(initialValues);
   const [roomState, setRoomState] = useState(room);
-
   const [open, setOpen] = useState(false);
-  // const [loading, setLoading] = useState(false);
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -75,6 +72,7 @@ export default function EditRoom(props) {
       [name]: value,
     });
   };
+
   const handleCapacityChange = (e, index) => {
     const updateRoom = roomState;
     updateRoom[index].capacity = Number(e.target.value);
@@ -140,7 +138,7 @@ export default function EditRoom(props) {
 
     await client
       .patch(id)
-      .set({ capacity: findCapacity.capacity }) // Increment field by count
+      .set({ capacity: findCapacity.capacity })
       .commit()
       .then(async () => {
         await fetchRoom();
