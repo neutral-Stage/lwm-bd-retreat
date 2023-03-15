@@ -255,11 +255,15 @@ export default function EditRoom(props) {
                       {row.roomNo}
                     </TableCell>
                     <TableCell align="center">
-                      <TextField
-                        label="Capacity"
-                        defaultValue={row.capacity}
-                        onChange={(e) => handleCapacityChange(e, index)}
-                      />
+                      <Box margin="auto" maxWidth="80px">
+                        <TextField
+                          sx={{ textAlign: "center" }}
+                          size="small"
+                          label="Capacity"
+                          defaultValue={row.capacity}
+                          onChange={(e) => handleCapacityChange(e, index)}
+                        />
+                      </Box>
                     </TableCell>
                     <TableCell align="center">
                       {row.capacity - row.booked}
