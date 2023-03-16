@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Paper from "@mui/material/Paper";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -13,27 +13,61 @@ import RoomSelection from "../components/RoomSelection";
 
 export default function Room(props) {
   const { participant, room } = props;
-
   const [participantState, setParticipantState] = useState(participant);
   const [roomState, setRoomState] = useState(room);
-
-  const totalCapacity = roomState.reduce(
+  const totalCapacity = roomState?.reduce(
     (previousValue, currentValue) => previousValue + currentValue.capacity,
     0
   );
-  const totalBooked = roomState.reduce(
+  const totalBooked = roomState?.reduce(
     (previousValue, currentValue) => previousValue + currentValue.booked,
     0
   );
 
-  const handleParticipant = (data) => {
-    setParticipantState(data);
+  const updateParticipant = (target, id) => {
+    const findRoom = roomState.find((obj) => obj._id === target);
+    const upd_parti = participantState.map((obj) => {
+      if (obj._id === id) {
+        obj.room = findRoom.roomNo;
+        obj.roomNo = {
+          _ref: findRoom._id,
+          _type: "reference",
+        };
+      }
+      return obj;
+    });
+
+    setParticipantState(upd_parti);
   };
-  const handleRoom = (data) => {
-    setRoomState(data);
+  const updateRoom = (id) => {
+    const upd_room = roomState.map((obj) => {
+      if (obj._id === id) {
+        obj.booked += 1;
+      }
+      return obj;
+    });
+    setRoomState(upd_room);
   };
 
-  const tableRef = useRef(null);
+  const diselection = (value, id) => {
+    const upd_room = roomState.map((obj) => {
+      if (obj._id === value && obj.booked > 0) {
+        obj.booked -= 1;
+      }
+      return obj;
+    });
+    setRoomState(upd_room);
+
+    const upd_parti = participantState.map((obj) => {
+      if (obj._id === id) {
+        obj.room = null;
+        obj.roomNo = null;
+      }
+      return obj;
+    });
+
+    setParticipantState(upd_parti);
+  };
 
   return (
     <Paper sx={{ width: "100%", overflow: "hidden" }}>
@@ -57,9 +91,9 @@ export default function Room(props) {
             </TableRow>
           </TableHead>
           <TableBody>
-            {room.map((row, index) => (
+            {roomState.map((row) => (
               <TableRow
-                key={index}
+                key={row._id}
                 sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
               >
                 <TableCell component="th" scope="row">
@@ -132,12 +166,7 @@ export default function Room(props) {
             <Typography variant="h6" sx={{ textDecoration: "underline" }}>
               {fel}
             </Typography>
-            <Table
-              aria-label="sticky table"
-              size="small"
-              ref={tableRef}
-              sx={{ p: 4 }}
-            >
+            <Table aria-label="sticky table" size="small" sx={{ p: 4 }}>
               <TableHead>
                 <TableRow>
                   <TableCell>Name</TableCell>
@@ -164,8 +193,9 @@ export default function Room(props) {
                         value={row?.roomNo?._ref}
                         room={roomState}
                         id={row._id}
-                        handleParticipant={handleParticipant}
-                        handleRoom={handleRoom}
+                        updateParticipant={updateParticipant}
+                        updateRoom={updateRoom}
+                        diselection={diselection}
                       />
                     </TableCell>
                   </TableRow>
