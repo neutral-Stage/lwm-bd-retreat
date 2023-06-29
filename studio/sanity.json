@@ -5,7 +5,7 @@
   },
   "api": {
     "projectId": "4sm78dyf",
-    "dataset": "christian-life"
+    "dataset": "retreat"
   },
   "plugins": [
     "@sanity/base",
