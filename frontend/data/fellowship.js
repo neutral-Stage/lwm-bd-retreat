@@ -11,6 +11,7 @@ export const fellowships = [
   "Kaliganj fellowship",
   "Kathira Fellowship",
   "Koligram Fellowship",
+  "Korean Mission Team",
   "Muladoli Fellowship",
   "Rajshahi Fellowship",
   "Noigaon Fellowship",
