@@ -27,6 +27,7 @@ import IconButton from "@mui/material/IconButton";
 import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import Stack from "@mui/material/Stack";
 import Card from "@mui/material/Card";
+import FormLabel from "@mui/material/FormLabel";
 import CardMedia from "@mui/material/CardMedia";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -60,6 +61,9 @@ export default function Index() {
   const convertDate = (date) => {
     return moment(date).format("YYYY-MM-DD");
   };
+  const convertYear = (date) => {
+    return moment(date).format("YYYY");
+  };
   const fileToDataUri = (file) =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -73,9 +77,14 @@ export default function Index() {
   const initialValues = {
     name: "",
     contact: "",
+    guardianName: "",
+    guardianContact: "",
     gender: "male",
     fellowshipName: "",
+    department: "",
+    isSaved: "",
     salvationDate: convertDate(new Date()),
+    birthYear: convertYear(new Date()),
     image: null,
   };
   const [values, setValues] = useState(initialValues);
@@ -105,6 +114,7 @@ export default function Index() {
     return <Slide direction="up" ref={ref} {...props} />;
   });
   const [date, setDate] = useState(new Date());
+  const [year, setYear] = useState(new Date());
   const [dataUri, setDataUri] = useState("");
   const [image, setImage] = useState(null);
   const handleDate = (newValue) => {
@@ -114,6 +124,14 @@ export default function Index() {
       salvationDate: format,
     });
     setDate(newValue);
+  };
+  const handleYear = (newValue) => {
+    const format = convertYear(newValue);
+    setValues({
+      ...values,
+      birthYear: format,
+    });
+    setYear(newValue);
   };
   const onChange = (file) => {
     if (!file) {
@@ -140,9 +158,16 @@ export default function Index() {
       regNo: regNo,
       name: data.get("name"),
       contact: data.get("contact"),
+      guardianName: data.get("guardianName") ? data.get("guardianName") : "",
+      guardianContact: data.get("guardianContact")
+        ? data.get("guardianContact")
+        : "",
       gender: data.get("gender"),
+      department: data.get("department"),
       fellowshipName: fellowshipName,
+      isSaved: values.isSaved === "yes" ? true : false,
       salvationDate: values.salvationDate,
+      birthYear: values.birthYear,
     };
 
     await client.create(form).then((res) => {
@@ -177,6 +202,14 @@ export default function Index() {
     }
     setLoading(false);
   };
+
+  const departmentList = [
+    { title: "Adult", value: "adult" },
+    { title: "Child", value: "child" },
+    { title: "Youth", value: "youth" },
+    { title: "Volunteer", value: "volunteer" },
+    { title: "Senior (Older than 65 yrs)", value: "senior" },
+  ];
 
   return (
     <LocalizationProvider dateAdapter={AdapterMoment}>
@@ -254,7 +287,6 @@ export default function Index() {
 
                 <Grid item xs={12}>
                   <TextField
-                    required
                     fullWidth
                     id="phone"
                     label="Phone"
@@ -264,6 +296,7 @@ export default function Index() {
                     onChange={(e) => handleInputChange(e)}
                   />
                 </Grid>
+
                 <Grid item xs={12}>
                   <RadioGroup
                     row
@@ -310,72 +343,160 @@ export default function Index() {
                   </FormControl>
                 </Grid>
                 <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel id="department">Department</InputLabel>
+                    <Select
+                      labelId="department"
+                      id="department"
+                      label="Department"
+                      name="department"
+                      onChange={(e) => handleInputChange(e)}
+                      value={values.department ?? "adult"}
+                      required
+                    >
+                      {departmentList.map((department, i) => {
+                        return (
+                          <MenuItem key={i} value={department.value}>
+                            {department.title}
+                          </MenuItem>
+                        );
+                      })}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                {values.department === "child" ? (
+                  <>
+                    <Grid item xs={12}>
+                      <TextField
+                        autoComplete="guardian-name"
+                        required={values.department === "child"}
+                        fullWidth
+                        id="guardianName"
+                        label="Guardian Name"
+                        name="guardianName"
+                        value={values.guardianName}
+                        onChange={(e) => handleInputChange(e)}
+                        autoFocus
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        required={values.department === "child"}
+                        id="guardianContact"
+                        label="Guardian Phone"
+                        name="guardianContact"
+                        autoComplete="phone"
+                        value={values.guardianContact}
+                        onChange={(e) => handleInputChange(e)}
+                      />
+                    </Grid>
+                  </>
+                ) : null}
+
+                <Grid item xs={12}>
                   <MobileDatePicker
-                    label="Salvation Date"
-                    name="salvationDate"
-                    inputFormat="DD/MM/yyyy"
-                    value={date}
-                    onChange={(newValue) => handleDate(newValue._d)}
+                    label="Birth Year"
+                    name="birthYear"
+                    inputFormat="yyyy"
+                    views={["year"]}
+                    value={year}
+                    onChange={(newValue) => handleYear(newValue._d)}
                     renderInput={(params) => <TextField {...params} />}
-                    required
                   />
                 </Grid>
-              </Grid>
-              <Grid item xs={12}>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Button variant="contained" component="label">
-                    Upload Photo
-                    <input
-                      hidden
-                      onChange={(event) =>
-                        onChange(event.target.files[0] || null)
-                      }
-                      accept="image/*"
-                      type="file"
-                    />
-                  </Button>
-                  <IconButton
-                    color="primary"
-                    aria-label="upload picture"
-                    component="label"
+                <Grid item xs={12}>
+                  <FormLabel id="salvation">Salvation</FormLabel>
+                  <RadioGroup
+                    row
+                    required
+                    aria-labelledby="salvation"
+                    value={values.isSaved}
+                    onChange={(e) => handleInputChange(e)}
+                    name="isSaved"
                   >
-                    <input
-                      hidden
-                      onChange={(event) =>
-                        onChange(event.target.files[0] || null)
-                      }
-                      accept="image/*"
-                      type="file"
+                    <FormControlLabel
+                      value="yes"
+                      control={<Radio />}
+                      label="Yes"
                     />
-                    <PhotoCamera />
-                  </IconButton>
-                </Stack>
-              </Grid>
-              {dataUri && (
-                <Grid
-                  container
-                  justifyContent="center"
-                  alignContent="center"
-                  style={{ marginTop: "1rem" }}
-                >
-                  <Card sx={{ maxWidth: 345 }}>
-                    <CardMedia
-                      component="img"
-                      height="140"
-                      image={dataUri}
-                      alt="green iguana"
+                    <FormControlLabel
+                      value="no"
+                      control={<Radio />}
+                      label="No"
                     />
-                  </Card>
+                  </RadioGroup>
                 </Grid>
-              )}
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                sx={{ mt: 3, mb: 2 }}
-              >
-                Submit
-              </Button>
+                {values.isSaved === "yes" ? (
+                  <Grid item xs={12}>
+                    <MobileDatePicker
+                      label="Salvation Date"
+                      name="salvationDate"
+                      inputFormat="DD/MM/yyyy"
+                      value={date}
+                      onChange={(newValue) => handleDate(newValue._d)}
+                      renderInput={(params) => <TextField {...params} />}
+                    />
+                  </Grid>
+                ) : null}
+                <Grid item xs={12}>
+                  <Stack direction="row" alignItems="center" spacing={2}>
+                    <Button variant="contained" component="label">
+                      Upload Photo
+                      <input
+                        hidden
+                        onChange={(event) =>
+                          onChange(event.target.files[0] || null)
+                        }
+                        accept="image/*"
+                        type="file"
+                      />
+                    </Button>
+                    <IconButton
+                      color="primary"
+                      aria-label="upload picture"
+                      component="label"
+                    >
+                      <input
+                        hidden
+                        onChange={(event) =>
+                          onChange(event.target.files[0] || null)
+                        }
+                        accept="image/*"
+                        type="file"
+                      />
+                      <PhotoCamera />
+                    </IconButton>
+                  </Stack>
+                </Grid>
+                {dataUri && (
+                  <Grid
+                    container
+                    justifyContent="center"
+                    alignContent="center"
+                    style={{ marginTop: "1rem" }}
+                  >
+                    <Card sx={{ maxWidth: 345 }}>
+                      <CardMedia
+                        component="img"
+                        height="140"
+                        image={dataUri}
+                        alt="green iguana"
+                      />
+                    </Card>
+                  </Grid>
+                )}
+                <Grid item xs={12}>
+                  <Button
+                    type="submit"
+                    fullWidth
+                    variant="contained"
+                    sx={{ mt: 1, mb: 2 }}
+                  >
+                    Submit
+                  </Button>
+                </Grid>
+              </Grid>
             </Box>
           </Box>
           <Copyright sx={{ mt: 5 }} />

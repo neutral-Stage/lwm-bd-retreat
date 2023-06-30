@@ -20,6 +20,16 @@ export default {
       type: "string",
     },
     {
+      name: "isSaved",
+      title: "Is Saved?",
+      type: "boolean",
+    },
+    {
+      name: "birthYear",
+      title: "Birth year",
+      type: "string",
+    },
+    {
       name: "salvationDate",
       title: "Salvation Date",
       type: "date",
@@ -49,6 +59,30 @@ export default {
         ],
         layout: "radio",
       },
+    },
+    {
+      name: "department",
+      title: "Department",
+      type: "string",
+      options: {
+        list: [
+          { title: "Adult", value: "adult" },
+          { title: "Child", value: "child" },
+          { title: "Youth", value: "youth" },
+          { title: "Volunteer", value: "volunteer" },
+          { title: "Senior (Older than 65 yrs)", value: "senior" },
+        ],
+      },
+    },
+    {
+      name: "guardianName",
+      title: "Guardian Name",
+      type: "string",
+    },
+    {
+      name: "guardianContact",
+      title: "Guardian Contact",
+      type: "string",
     },
     {
       name: "present",
