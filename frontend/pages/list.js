@@ -200,6 +200,8 @@ export default function StickyHeadTable(props) {
         if (participantsByFel.length === 0) {
           return;
         }
+        var now = new Date();
+        var current_year = now.getFullYear();
         return (
           <TableContainer
             key={fel}
@@ -226,7 +228,9 @@ export default function StickyHeadTable(props) {
                   <TableCell> Name</TableCell>
                   <TableCell align="right">Contact</TableCell>
                   <TableCell align="right">Gender</TableCell>
-                  <TableCell align="right">action</TableCell>
+                  <TableCell align="right">Department</TableCell>
+                  <TableCell align="right">Age</TableCell>
+                  <TableCell align="right">Saved/Unsaved</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -240,13 +244,18 @@ export default function StickyHeadTable(props) {
                     </TableCell>
                     <TableCell align="right">{row.contact}</TableCell>
                     <TableCell align="right">{row.gender}</TableCell>
+                    <TableCell align="right">{row.department}</TableCell>
                     <TableCell align="right">
-                      <IconButton
+                      {current_year - row.birthYear}
+                    </TableCell>
+                    <TableCell align="center">
+                      {row.isSaved ? "Saved" : "Unsaved"}
+                      {/* <IconButton
                         aria-label="delete"
                         onClick={() => handleDialog(row)}
                       >
                         <DeleteForeverOutlinedIcon color="error" />
-                      </IconButton>
+                      </IconButton> */}
                     </TableCell>
                   </TableRow>
                 ))}
