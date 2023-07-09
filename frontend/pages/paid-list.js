@@ -21,6 +21,37 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 
+export const RadioPaid = (props) => {
+  const [feePaid, setFeePaid] = useState(props.feePaid);
+  const handlePaid = async (e, id) => {
+    setFeePaid(e.target.value === "paid" ? true : false);
+    await client
+      .patch(id) // Document ID to patch
+      .set({ feePaid: e.target.value === "paid" ? true : false }) // Increment field by count
+      .commit() // Perform the patch and return a promise
+      .then((updatedBike) => {
+        console.log("Hurray, the participant is updated! New document:");
+        console.log(updatedBike);
+      })
+      .catch((err) => {
+        console.error("Oh no, the update failed: ", err.message);
+      });
+  };
+  return (
+    <RadioGroup
+      row
+      required
+      aria-labelledby="feePaid"
+      value={feePaid ? "paid" : "unpaid"}
+      onChange={(e) => handlePaid(e, props.id)}
+      name="feePaid"
+    >
+      <FormControlLabel value="paid" control={<Radio />} label="Paid" />
+      <FormControlLabel value="unpaid" control={<Radio />} label="Unpaid" />
+    </RadioGroup>
+  );
+};
+
 export default function StickyHeadTable(props) {
   const { participant } = props;
   const [participantState, setParticipantState] = useState(participant);
@@ -79,20 +110,6 @@ export default function StickyHeadTable(props) {
       .then((updatedBike) => {
         setOpen(false);
         setSelected("");
-        console.log("Hurray, the participant is updated! New document:");
-        console.log(updatedBike);
-      })
-      .catch((err) => {
-        console.error("Oh no, the update failed: ", err.message);
-      });
-  };
-
-  const handlePaid = async (e, id) => {
-    await client
-      .patch(id) // Document ID to patch
-      .set({ feePaid: e.target.value === "paid" ? true : false }) // Increment field by count
-      .commit() // Perform the patch and return a promise
-      .then((updatedBike) => {
         console.log("Hurray, the participant is updated! New document:");
         console.log(updatedBike);
       })
@@ -250,25 +267,7 @@ export default function StickyHeadTable(props) {
                     </TableCell>
                     <TableCell align="right">{row.contact}</TableCell>
                     <TableCell align="right">
-                      <RadioGroup
-                        row
-                        required
-                        aria-labelledby="feePaid"
-                        value={row.feePaid ? "paid" : "unpaid"}
-                        onChange={(e) => handlePaid(e, row._id)}
-                        name="feePaid"
-                      >
-                        <FormControlLabel
-                          value="paid"
-                          control={<Radio />}
-                          label="Paid"
-                        />
-                        <FormControlLabel
-                          value="unpaid"
-                          control={<Radio />}
-                          label="Unpaid"
-                        />
-                      </RadioGroup>
+                      <RadioPaid id={row._id} feePaid={row.feePaid} />
                     </TableCell>
                   </TableRow>
                 ))}
