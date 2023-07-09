@@ -254,7 +254,7 @@ export default function StickyHeadTable(props) {
                         row
                         required
                         aria-labelledby="feePaid"
-                        value={row.feePaid}
+                        value={row.feePaid ? "paid" : "unpaid"}
                         onChange={(e) => handlePaid(e, row._id)}
                         name="feePaid"
                       >
@@ -264,7 +264,7 @@ export default function StickyHeadTable(props) {
                           label="Paid"
                         />
                         <FormControlLabel
-                          value="Unpaid"
+                          value="unpaid"
                           control={<Radio />}
                           label="Unpaid"
                         />
