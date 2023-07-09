@@ -116,6 +116,12 @@ export default {
       type: "reference",
       to: [{ type: "roomNo" }],
     },
+    {
+      title: "Fee Paid",
+      name: "feePaid",
+      type: "boolean",
+      initialValue: false,
+    },
   ],
   preview: {
     select: {
