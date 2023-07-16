@@ -10,6 +10,7 @@ import { client } from "../service/sanityClient";
 import { fellowships } from "../data/fellowship";
 import { Divider, Typography } from "@mui/material";
 import DeleteForeverOutlinedIcon from "@mui/icons-material/DeleteForeverOutlined";
+import EditIcon from "@mui/icons-material/Edit";
 import IconButton from "@mui/material/IconButton";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
@@ -17,6 +18,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
+import EditModalForm from "../components/EditModalForm";
 
 export default function StickyHeadTable(props) {
   const { participant } = props;
@@ -54,6 +56,7 @@ export default function StickyHeadTable(props) {
   const tableRef = useRef(null);
 
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [selected, setSelected] = useState("");
 
   const handleDialog = (value) => {
@@ -64,6 +67,14 @@ export default function StickyHeadTable(props) {
   const handleClose = () => {
     setOpen(false);
   };
+  const handleEditDialog = (value) => {
+    setSelected(value);
+    setEditOpen(true);
+  };
+
+  const handleEditClose = () => {
+    setEditOpen(false);
+  };
 
   const handleDelete = async () => {
     const upd_parti = participantState.map((obj) => {
@@ -72,14 +83,11 @@ export default function StickyHeadTable(props) {
       }
       return obj;
     });
-
+    setOpen(false);
     setParticipantState(upd_parti);
     await client
-      .patch(selected._id) // Document ID to patch
-      .set({ present: "absent" }) // Increment field by count
-      .commit() // Perform the patch and return a promise
+      .delete(selected._id)
       .then((updatedBike) => {
-        setOpen(false);
         setSelected("");
         console.log("Hurray, the participant is updated! New document:");
         console.log(updatedBike);
@@ -92,11 +100,36 @@ export default function StickyHeadTable(props) {
   return (
     <Paper sx={{ width: "100%", overflow: "hidden" }}>
       <Dialog
+        open={editOpen}
+        onClose={handleEditClose}
+        aria-labelledby="edit-participant"
+      >
+        <DialogTitle id="edit-participant">
+          {`Edit ${selected?.name} from ${selected?.fellowshipName}`}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            <EditModalForm
+              selected={selected}
+              setSelected={setSelected}
+              handleClose={handleEditClose}
+              participantState={participantState}
+              setParticipantState={setParticipantState}
+            />
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button variant="contained" color="primary" onClick={handleEditClose}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
         open={open}
         onClose={handleClose}
-        aria-labelledby="alert-dialog-title"
+        aria-labelledby="delete-participant"
       >
-        <DialogTitle id="alert-dialog-title">
+        <DialogTitle id="delete-participant">
           {`Are you sure you want to delete  ?`}
         </DialogTitle>
         <DialogContent>
@@ -208,7 +241,7 @@ export default function StickyHeadTable(props) {
             component={Paper}
             sx={{
               p: 4,
-              maxWidth: "40rem",
+              maxWidth: "50rem",
               my: 4,
               mx: "auto",
               boxShadow: "0px 0px 8px 8px rgba(0, 0, 0,0.2)",
@@ -231,6 +264,8 @@ export default function StickyHeadTable(props) {
                   <TableCell align="right">Department</TableCell>
                   <TableCell align="right">Age</TableCell>
                   <TableCell align="right">Saved/Unsaved</TableCell>
+                  <TableCell align="right">Edit</TableCell>
+                  <TableCell align="right">Delete</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -250,12 +285,22 @@ export default function StickyHeadTable(props) {
                     </TableCell>
                     <TableCell align="center">
                       {row.isSaved ? "Saved" : "Unsaved"}
-                      {/* <IconButton
+                    </TableCell>
+                    <TableCell>
+                      <IconButton
+                        aria-label="edit"
+                        onClick={() => handleEditDialog(row)}
+                      >
+                        <EditIcon color="primary" />
+                      </IconButton>
+                    </TableCell>
+                    <TableCell>
+                      <IconButton
                         aria-label="delete"
                         onClick={() => handleDialog(row)}
                       >
                         <DeleteForeverOutlinedIcon color="error" />
-                      </IconButton> */}
+                      </IconButton>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -272,7 +317,7 @@ export async function getStaticProps() {
   // It's important to default the slug so that it doesn't return "undefined"
   // const { slug = "" } = context.params
   const participant = await client.fetch(
-    '*[_type == "participant" && (present == "present" || present == null) ]| order(_createdAt desc)'
+    '*[_type == "participant" && (present == "present" || present == null) ]| order(_createdAt desc){..., "imgUrl": image.asset->url}'
   );
   return {
     props: {

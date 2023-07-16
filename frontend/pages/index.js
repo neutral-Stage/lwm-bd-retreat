@@ -1,4 +1,4 @@
-import React, { useState, forwardRef, useEffect } from "react";
+import React, { useState, forwardRef } from "react";
 import Image from "next/image";
 import Button from "@mui/material/Button";
 import CssBaseline from "@mui/material/CssBaseline";
