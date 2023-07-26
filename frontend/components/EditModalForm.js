@@ -33,10 +33,34 @@ const EditModalForm = ({
   const [values, setValues] = useState(selected);
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setValues({
-      ...values,
-      [name]: value,
-    });
+    if (name === "isSaved" && value === "yes") {
+      setSelected({
+        ...values,
+        isSaved: true,
+      });
+      setValues({
+        ...values,
+        isSaved: true,
+      });
+    } else if (name === "isSaved" && value === "no") {
+      setSelected({
+        ...values,
+        isSaved: false,
+      });
+      setValues({
+        ...values,
+        isSaved: false,
+      });
+    } else {
+      setSelected({
+        ...values,
+        [name]: value,
+      });
+      setValues({
+        ...values,
+        [name]: value,
+      });
+    }
   };
   const convertDate = (date) => {
     return moment(date).format("YYYY-MM-DD");
