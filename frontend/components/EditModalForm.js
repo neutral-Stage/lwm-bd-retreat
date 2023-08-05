@@ -117,6 +117,7 @@ const EditModalForm = ({
     setParticipantState(upd_parti);
     handleClose();
     const data = new FormData(event.currentTarget);
+
     const fellowshipName = data.get("fellowshipName");
     const felName = fellowshipName.slice(0, 3).toUpperCase();
     var serNo = Math.floor(1000 + Math.random() * 9000);
@@ -134,10 +135,11 @@ const EditModalForm = ({
       gender: data.get("gender"),
       department: data.get("department"),
       fellowshipName: fellowshipName,
-      isSaved: values.isSaved === "yes" ? true : false,
+      isSaved: values.isSaved ? true : false,
       salvationDate: values.salvationDate,
       birthYear: values.birthYear,
     };
+    console.log(form);
     setSelected(form);
 
     await client.createOrReplace(form).then((res) => {
