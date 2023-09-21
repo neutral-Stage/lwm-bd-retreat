@@ -267,7 +267,7 @@ export default function Index() {
               October 27-29, 2023
             </Typography>
             <Box>
-              <Typography>Registretion closed now!</Typography>
+              <Typography>Registretion is closed now!</Typography>
             </Box>
             {/* <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
               <Grid container spacing={2}>
