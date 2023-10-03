@@ -359,7 +359,7 @@ export async function getStaticProps() {
   // It's important to default the slug so that it doesn't return "undefined"
   // const { slug = "" } = context.params
   const participant = await client.fetch(
-    '*[_type == "participant" && !(fellowshipName in ["Bandarban Fellowship", "Hativanga fellowship", "Muladoli Fellowship", "Ruma Fellowship", "Sinaipara Fellowship","Vaggomonipara fellowship"]) ]| order(_createdAt desc){..., "imgUrl": image.asset->url}'
+    '*[_type == "participant" && !(fellowshipName in ["Antapara fellowship","Bandarban Fellowship", "Hativanga fellowship", "Muladoli Fellowship", "Ruma Fellowship", "Sinaipara Fellowship","Vaggomonipara fellowship"]) ]| order(_createdAt desc){..., "imgUrl": image.asset->url}'
   )
   return {
     props: {

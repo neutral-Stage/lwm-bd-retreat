@@ -326,7 +326,7 @@ export default function Index() {
                     <Select
                       labelId='demo-simple-select-helper-label'
                       id='demo-simple-select-helper'
-                      label='Fellowship Name'
+                      label='Fellowship/Area Name'
                       name='fellowshipName'
                       onChange={(e) => handleInputChange(e)}
                       value={values.fellowshipName ?? 'Dhaka Church'}
