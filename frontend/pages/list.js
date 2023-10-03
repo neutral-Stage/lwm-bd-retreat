@@ -19,13 +19,16 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 import EditModalForm from '../components/EditModalForm'
+import Radio from '@mui/material/Radio'
+import RadioGroup from '@mui/material/RadioGroup'
+import FormControlLabel from '@mui/material/FormControlLabel'
+import FormControl from '@mui/material/FormControl'
 
 export default function StickyHeadTable(props) {
   const { participant } = props
   const [participantState, setParticipantState] = useState(participant)
 
-  const isPresent = (p) =>
-    p.present === 'present' || p.present === null || p.present === undefined
+  const isPresent = (p) => p.present === 'present'
   const male = participantState.filter(
     (p) => p.gender === 'male' && isPresent(p)
   )
@@ -97,6 +100,20 @@ export default function StickyHeadTable(props) {
       })
   }
 
+  const handleChangePresent = async (e, id) => {
+    await client
+      .patch(id) // Document ID to patch
+      .set({ present: e.target.value }) // Increment field by count
+      .commit() // Perform the patch and return a promise
+      .then((updatedBike) => {
+        console.log('Hurray, the participant is updated! New document:')
+        console.log(updatedBike)
+      })
+      .catch((err) => {
+        console.error('Oh no, the update failed: ', err.message)
+      })
+  }
+
   return (
     <Paper sx={{ width: '100%', overflow: 'hidden' }}>
       <Dialog
@@ -155,7 +172,7 @@ export default function StickyHeadTable(props) {
         component={Paper}
         sx={{
           p: 4,
-          maxWidth: '60rem',
+          maxWidth: '70rem',
           my: 4,
           mx: 'auto',
           boxShadow: '0px 0px 8px 8px rgba(0, 0, 0,0.2)',
@@ -241,7 +258,7 @@ export default function StickyHeadTable(props) {
             component={Paper}
             sx={{
               p: 4,
-              maxWidth: '50rem',
+              maxWidth: '74rem',
               my: 4,
               mx: 'auto',
               boxShadow: '0px 0px 8px 8px rgba(0, 0, 0,0.2)',
@@ -264,6 +281,7 @@ export default function StickyHeadTable(props) {
                   <TableCell align='right'>Department</TableCell>
                   <TableCell align='right'>Age</TableCell>
                   <TableCell align='right'>Saved/Unsaved</TableCell>
+                  <TableCell align='center'>Present/Absent</TableCell>
                   <TableCell align='right'>Edit</TableCell>
                   <TableCell align='right'>Delete</TableCell>
                 </TableRow>
@@ -285,6 +303,30 @@ export default function StickyHeadTable(props) {
                     </TableCell>
                     <TableCell align='center'>
                       {row.isSaved ? 'Saved' : 'Unsaved'}
+                    </TableCell>
+                    <TableCell align='right'>
+                      <FormControl>
+                        <RadioGroup
+                          aria-labelledby='demo-radio-buttons-group-label'
+                          defaultValue={row.present}
+                          onChange={(e) => handleChangePresent(e, row._id)}
+                          name='radio-buttons-group'
+                          row
+                        >
+                          <FormControlLabel
+                            value='present'
+                            fontSize='1rem'
+                            control={<Radio />}
+                            label='Present'
+                          />
+                          <FormControlLabel
+                            value='absent'
+                            control={<Radio />}
+                            label='Absent'
+                            fontSize='1rem'
+                          />
+                        </RadioGroup>
+                      </FormControl>
                     </TableCell>
                     <TableCell>
                       <IconButton
@@ -317,7 +359,7 @@ export async function getStaticProps() {
   // It's important to default the slug so that it doesn't return "undefined"
   // const { slug = "" } = context.params
   const participant = await client.fetch(
-    '*[_type == "participant" && (present == "present" || present == null) && !(fellowshipName in ["Bandarban Fellowship", "Hativanga fellowship", "Muladoli Fellowship", "Ruma Fellowship", "Sinaipara Fellowship","Vaggomonipara fellowship"]) ]| order(_createdAt desc){..., "imgUrl": image.asset->url}'
+    '*[_type == "participant" && !(fellowshipName in ["Bandarban Fellowship", "Hativanga fellowship", "Muladoli Fellowship", "Ruma Fellowship", "Sinaipara Fellowship","Vaggomonipara fellowship"]) ]| order(_createdAt desc){..., "imgUrl": image.asset->url}'
   )
   return {
     props: {

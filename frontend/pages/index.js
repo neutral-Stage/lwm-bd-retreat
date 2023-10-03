@@ -17,7 +17,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment'
 import moment from 'moment'
 import { v4 as uuidv4 } from 'uuid'
-import { fellowships } from '../data/fellowship'
+import { dhakaRetreatFellowships as fellowships } from '../data/fellowship'
 import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
 import CircularProgress from '@mui/material/CircularProgress'
@@ -266,19 +266,19 @@ export default function Index() {
             <Typography component='h1' variant='overline' align='center'>
               October 27-29, 2023
             </Typography>
-            <Box>
+            {/* <Box>
               <Typography>Registretion is closed now!</Typography>
-            </Box>
-            {/* <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
+            </Box> */}
+            <Box component='form' onSubmit={handleSubmit} sx={{ mt: 3 }}>
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <TextField
-                    autoComplete="given-name"
+                    autoComplete='given-name'
                     required
                     fullWidth
-                    id="fullName"
-                    label="Full Name"
-                    name="name"
+                    id='fullName'
+                    label='Full Name'
+                    name='name'
                     value={values.name}
                     onChange={(e) => handleInputChange(e)}
                     autoFocus
@@ -288,10 +288,10 @@ export default function Index() {
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
-                    id="phone"
-                    label="Phone"
-                    name="contact"
-                    autoComplete="off"
+                    id='phone'
+                    label='Phone'
+                    name='contact'
+                    autoComplete='off'
                     value={values.contact}
                     onChange={(e) => handleInputChange(e)}
                   />
@@ -301,35 +301,35 @@ export default function Index() {
                   <RadioGroup
                     row
                     required
-                    aria-labelledby="demo-radio-buttons-group-label"
+                    aria-labelledby='demo-radio-buttons-group-label'
                     value={values.gender}
                     onChange={(e) => handleInputChange(e)}
-                    name="gender"
+                    name='gender'
                   >
                     <FormControlLabel
-                      value="male"
+                      value='male'
                       control={<Radio />}
-                      label="Male"
+                      label='Male'
                     />
                     <FormControlLabel
-                      value="female"
+                      value='female'
                       control={<Radio />}
-                      label="Female"
+                      label='Female'
                     />
                   </RadioGroup>
                 </Grid>
                 <Grid item xs={12}>
                   <FormControl fullWidth>
-                    <InputLabel id="demo-simple-select-helper-label">
+                    <InputLabel id='demo-simple-select-helper-label'>
                       Fellowship Name
                     </InputLabel>
                     <Select
-                      labelId="demo-simple-select-helper-label"
-                      id="demo-simple-select-helper"
-                      label="Fellowship Name"
-                      name="fellowshipName"
+                      labelId='demo-simple-select-helper-label'
+                      id='demo-simple-select-helper'
+                      label='Fellowship Name'
+                      name='fellowshipName'
                       onChange={(e) => handleInputChange(e)}
-                      value={values.fellowshipName ?? "Dhaka Church"}
+                      value={values.fellowshipName ?? 'Dhaka Church'}
                       required
                     >
                       {fellowships.map((fellowship, i) => {
@@ -337,21 +337,21 @@ export default function Index() {
                           <MenuItem key={i} value={fellowship}>
                             {fellowship}
                           </MenuItem>
-                        );
+                        )
                       })}
                     </Select>
                   </FormControl>
                 </Grid>
                 <Grid item xs={12}>
                   <FormControl fullWidth>
-                    <InputLabel id="department">Department</InputLabel>
+                    <InputLabel id='department'>Department</InputLabel>
                     <Select
-                      labelId="department"
-                      id="department"
-                      label="Department"
-                      name="department"
+                      labelId='department'
+                      id='department'
+                      label='Department'
+                      name='department'
                       onChange={(e) => handleInputChange(e)}
-                      value={values.department ?? "adult"}
+                      value={values.department ?? 'adult'}
                       required
                     >
                       {departmentList.map((department, i) => {
@@ -359,21 +359,21 @@ export default function Index() {
                           <MenuItem key={i} value={department.value}>
                             {department.title}
                           </MenuItem>
-                        );
+                        )
                       })}
                     </Select>
                   </FormControl>
                 </Grid>
-                {values.department === "child" ? (
+                {values.department === 'child' ? (
                   <>
                     <Grid item xs={12}>
                       <TextField
-                        autoComplete="guardian-name"
-                        required={values.department === "child"}
+                        autoComplete='guardian-name'
+                        required={values.department === 'child'}
                         fullWidth
-                        id="guardianName"
-                        label="Guardian Name"
-                        name="guardianName"
+                        id='guardianName'
+                        label='Guardian Name'
+                        name='guardianName'
                         value={values.guardianName}
                         onChange={(e) => handleInputChange(e)}
                         autoFocus
@@ -382,11 +382,11 @@ export default function Index() {
                     <Grid item xs={12}>
                       <TextField
                         fullWidth
-                        required={values.department === "child"}
-                        id="guardianContact"
-                        label="Guardian Phone"
-                        name="guardianContact"
-                        autoComplete="phone"
+                        required={values.department === 'child'}
+                        id='guardianContact'
+                        label='Guardian Phone'
+                        name='guardianContact'
+                        autoComplete='phone'
                         value={values.guardianContact}
                         onChange={(e) => handleInputChange(e)}
                       />
@@ -396,43 +396,43 @@ export default function Index() {
 
                 <Grid item xs={12}>
                   <MobileDatePicker
-                    label="Birth Year"
-                    name="birthYear"
-                    inputFormat="yyyy"
-                    views={["year"]}
+                    label='Birth Year'
+                    name='birthYear'
+                    inputFormat='yyyy'
+                    views={['year']}
                     value={year}
                     onChange={(newValue) => handleYear(newValue._d)}
                     renderInput={(params) => <TextField {...params} />}
                   />
                 </Grid>
                 <Grid item xs={12}>
-                  <FormLabel id="salvation">Salvation</FormLabel>
+                  <FormLabel id='salvation'>Salvation</FormLabel>
                   <RadioGroup
                     row
                     required
-                    aria-labelledby="salvation"
+                    aria-labelledby='salvation'
                     value={values.isSaved}
                     onChange={(e) => handleInputChange(e)}
-                    name="isSaved"
+                    name='isSaved'
                   >
                     <FormControlLabel
-                      value="yes"
+                      value='yes'
                       control={<Radio />}
-                      label="Yes"
+                      label='Yes'
                     />
                     <FormControlLabel
-                      value="no"
+                      value='no'
                       control={<Radio />}
-                      label="No"
+                      label='No'
                     />
                   </RadioGroup>
                 </Grid>
-                {values.isSaved === "yes" ? (
+                {values.isSaved === 'yes' ? (
                   <Grid item xs={12}>
                     <MobileDatePicker
-                      label="Salvation Date"
-                      name="salvationDate"
-                      inputFormat="DD/MM/yyyy"
+                      label='Salvation Date'
+                      name='salvationDate'
+                      inputFormat='DD/MM/yyyy'
                       value={date}
                       onChange={(newValue) => handleDate(newValue._d)}
                       renderInput={(params) => <TextField {...params} />}
@@ -440,30 +440,30 @@ export default function Index() {
                   </Grid>
                 ) : null}
                 <Grid item xs={12}>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Button variant="contained" component="label">
+                  <Stack direction='row' alignItems='center' spacing={2}>
+                    <Button variant='contained' component='label'>
                       Upload Photo
                       <input
                         hidden
                         onChange={(event) =>
                           onChange(event.target.files[0] || null)
                         }
-                        accept="image/*"
-                        type="file"
+                        accept='image/*'
+                        type='file'
                       />
                     </Button>
                     <IconButton
-                      color="primary"
-                      aria-label="upload picture"
-                      component="label"
+                      color='primary'
+                      aria-label='upload picture'
+                      component='label'
                     >
                       <input
                         hidden
                         onChange={(event) =>
                           onChange(event.target.files[0] || null)
                         }
-                        accept="image/*"
-                        type="file"
+                        accept='image/*'
+                        type='file'
                       />
                       <PhotoCamera />
                     </IconButton>
@@ -472,32 +472,32 @@ export default function Index() {
                 {dataUri && (
                   <Grid
                     container
-                    justifyContent="center"
-                    alignContent="center"
-                    style={{ marginTop: "1rem" }}
+                    justifyContent='center'
+                    alignContent='center'
+                    style={{ marginTop: '1rem' }}
                   >
                     <Card sx={{ maxWidth: 345 }}>
                       <CardMedia
-                        component="img"
-                        height="140"
+                        component='img'
+                        height='140'
                         image={dataUri}
-                        alt="green iguana"
+                        alt='green iguana'
                       />
                     </Card>
                   </Grid>
                 )}
                 <Grid item xs={12}>
                   <Button
-                    type="submit"
+                    type='submit'
                     fullWidth
-                    variant="contained"
+                    variant='contained'
                     sx={{ mt: 1, mb: 2 }}
                   >
                     Submit
                   </Button>
                 </Grid>
               </Grid>
-            </Box> */}
+            </Box>
           </Box>
           <Copyright sx={{ mt: 5 }} />
         </Container>
