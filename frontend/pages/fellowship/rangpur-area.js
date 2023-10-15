@@ -5,15 +5,12 @@ import Header from '../../components/header'
 import SearchableTable from '../../components/searchableTable'
 import { client } from '../../service/sanityClient'
 
-export default function Ruma({ participant }) {
+export default function Rangpur({ participant }) {
   return (
     <Box>
       <Header />
       <Container maxWidth='xl' sx={{ marginTop: '3rem' }}>
-        <SearchableTable
-          participants={participant}
-          fellowship='Ruma Fellowship'
-        />
+        <SearchableTable participants={participant} fellowship='Rangpur Area' />
       </Container>
     </Box>
   )
@@ -23,7 +20,7 @@ export async function getStaticProps() {
   // It's important to default the slug so that it doesn't return "undefined"
   // const { slug = "" } = context.params
   const participant = await client.fetch(
-    '*[_type == "participant" && fellowshipName=="Ruma Fellowship" && present == "present"]{...,"roomNo":roomNo->roomNo}| order(_createdAt desc)'
+    '*[_type == "participant" && fellowshipName=="Rangpur Area" && present == "present"]{...,"roomNo":roomNo->roomNo}| order(_createdAt desc)'
   )
   return {
     props: {

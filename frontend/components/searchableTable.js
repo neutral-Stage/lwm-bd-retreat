@@ -93,7 +93,7 @@ const SearchableTable = ({ participants, fellowship }) => {
                 <TableCell>Name</TableCell>
                 <TableCell align='right'>Phone</TableCell>
                 <TableCell align='right'>Male/Female</TableCell>
-                <TableCell align='right'>Present/Absent</TableCell>
+                <TableCell align='right'>Department</TableCell>
                 <TableCell align='center'>Room No.</TableCell>
               </TableRow>
             </TableHead>
@@ -118,7 +118,7 @@ const SearchableTable = ({ participants, fellowship }) => {
                       align='right'
                       sx={{ textTransform: 'capitalize' }}
                     >
-                      {row.present}
+                      {row.department}
                     </TableCell>
                     <TableCell
                       align='center'
