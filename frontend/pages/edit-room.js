@@ -260,7 +260,7 @@ export default function EditRoom(props) {
                           sx={{ textAlign: "center" }}
                           size="small"
                           label="Capacity"
-                          defaultValue={row.capacity}
+                          value={row.capacity}
                           onChange={(e) => handleCapacityChange(e, index)}
                         />
                       </Box>
