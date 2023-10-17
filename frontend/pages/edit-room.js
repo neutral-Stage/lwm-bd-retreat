@@ -94,7 +94,7 @@ export default function EditRoom(props) {
     const form = {
       _id: uuidv4(),
       _type: "roomNo",
-      roomNo: Number(values.roomNo),
+      roomNo: values.roomNo,
       capacity: Number(values.capacity),
     };
     const updateRoom = roomState;
@@ -189,7 +189,7 @@ export default function EditRoom(props) {
                   <TextField
                     required
                     fullWidth
-                    type="number"
+                    type="text"
                     id="roomNo"
                     label="Room No."
                     name="roomNo"

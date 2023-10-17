@@ -9,7 +9,7 @@ export default {
     {
       name: "roomNo",
       title: "Room No",
-      type: "number",
+      type: "string",
     },
     {
       name: "capacity",
