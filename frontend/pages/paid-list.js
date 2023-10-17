@@ -7,7 +7,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { client } from "../service/sanityClient";
-import { fellowships } from "../data/fellowship";
+import { dhakaRetreatFellowships as fellowships } from "../data/fellowship";
 import { Divider, Typography } from "@mui/material";
 import DeleteForeverOutlinedIcon from "@mui/icons-material/DeleteForeverOutlined";
 import IconButton from "@mui/material/IconButton";
@@ -20,6 +20,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
+import * as XLSX from "xlsx";
 
 export const RadioPaid = (props) => {
   const [feePaid, setFeePaid] = useState(props.feePaid);
@@ -118,6 +119,71 @@ export default function StickyHeadTable(props) {
       });
   };
 
+  const downloadExcel = () => {
+    const newData = getFellowship.map((p) => {
+      return {
+        "fellowship Name.": p.fellowshipName,
+        paid: p.paid,
+        unpaid: p.unpaid,
+      };
+    });
+
+    const totalList = [
+      ...newData,
+      {
+        "Fellowship Name.": "Total",
+        paid: totalPaid,
+        unpaid: totalUnpaid,
+      },
+    ];
+    const workSheet = XLSX.utils.json_to_sheet(totalList);
+    const workBook = XLSX.utils.book_new();
+
+    const arrayOfFel = fellowships.map((fel) => {
+      const participantsByFel = participantState.filter(
+        (p) =>
+          p.fellowshipName === fel &&
+          (p.present === "present" ||
+            p.present === null ||
+            p.present === undefined)
+      );
+      if (participantsByFel.length === 0) {
+        return;
+      }
+      return participantsByFel.map((row) => {
+        return {
+          name: row.name,
+          contact: row.contact,
+          paid: row.feePaid,
+          fellowshipName: row.fellowshipName,
+        };
+      });
+    });
+    const ws = arrayOfFel.filter((item) => item);
+    let listWs = [];
+    ws.map((fellowship, index) => {
+      const newLst = fellowship.map((p) => {
+        return {
+          "fellowship Name.": p.fellowshipName,
+          name: p.name,
+          contact: p.contact,
+        };
+      });
+      const xl = XLSX.utils.json_to_sheet(newLst);
+      XLSX.utils.book_append_sheet(workBook, xl, `participants-${1 + index}`);
+
+      listWs.push(xl);
+    });
+
+    XLSX.utils.book_append_sheet(workBook, workSheet, "fellowships");
+    //Buffer
+    // let buf = XLSX.write(workBook, { bookType: "xlsx", type: "buffer" });
+    //Binary string
+    XLSX.write(workBook, { bookType: "xlsx", type: "binary" });
+    //Download
+    XLSX.writeFile(workBook, `paid-list.xlsx`);
+  };
+
   return (
     <Paper sx={{ width: "100%", overflow: "hidden" }}>
       <Dialog
@@ -147,6 +213,18 @@ export default function StickyHeadTable(props) {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          padding: "1rem",
+        }}
+      >
+        <Button variant="outlined" onClick={downloadExcel} color="primary">
+          Export to Excel
+        </Button>
+      </div>
       <TableContainer
         component={Paper}
         sx={{
