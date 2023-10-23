@@ -237,8 +237,6 @@ export default function Room(props) {
 }
 
 export async function getStaticProps() {
-  // It's important to default the slug so that it doesn't return "undefined"
-  // const { slug = "" } = context.params
   const participant = await client.fetch(
     '*[_type == "participant" && (gender == "female" || department == "child") ]{...,"room":roomNo->roomNo}| order(_createdAt desc)'
   )
