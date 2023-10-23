@@ -188,7 +188,7 @@ export default function EditRoom(props) {
                   <TextField
                     required
                     fullWidth
-                    type='number'
+                    type='text'
                     id='roomNo'
                     label='Room No.'
                     name='roomNo'

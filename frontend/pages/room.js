@@ -7,7 +7,7 @@ import TableContainer from '@mui/material/TableContainer'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import { client } from '../service/sanityClient'
-import { fellowships } from '../data/fellowship'
+import { dhakaRetreatFellowships as fellowships } from '../data/fellowship'
 import { Divider, Typography } from '@mui/material'
 import RoomSelection from '../components/RoomSelection'
 
@@ -159,7 +159,7 @@ export default function Room(props) {
             component={Paper}
             sx={{
               p: 4,
-              maxWidth: '60rem',
+              maxWidth: '70rem',
               my: 4,
               mx: 'auto',
               boxShadow: '0px 0px 8px 8px rgba(0, 0, 0,0.2)',
@@ -176,6 +176,7 @@ export default function Room(props) {
                   <TableCell align='right'>Gender</TableCell>
                   <TableCell align='right'>Department</TableCell>
                   <TableCell align='right'>Age</TableCell>
+                  <TableCell align='right'>Present</TableCell>
                   <TableCell align='right'>Room</TableCell>
                   <TableCell align='right'>Select Room</TableCell>
                 </TableRow>
@@ -212,6 +213,7 @@ export default function Room(props) {
                       {' '}
                       {current_year - row.birthYear}
                     </TableCell>
+                    <TableCell align='right'> {row.present}</TableCell>
                     <TableCell align='right'>{row.room ?? ''}</TableCell>
                     <TableCell align='right'>
                       <RoomSelection
