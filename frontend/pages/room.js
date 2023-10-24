@@ -159,7 +159,7 @@ export default function Room(props) {
             component={Paper}
             sx={{
               p: 4,
-              maxWidth: '70rem',
+              maxWidth: '80rem',
               my: 4,
               mx: 'auto',
               boxShadow: '0px 0px 8px 8px rgba(0, 0, 0,0.2)',
@@ -176,6 +176,8 @@ export default function Room(props) {
                   <TableCell align='right'>Gender</TableCell>
                   <TableCell align='right'>Department</TableCell>
                   <TableCell align='right'>Age</TableCell>
+                  <TableCell align='right'>Guardian Name</TableCell>
+                  <TableCell align='right'>Guardian Contact</TableCell>
                   <TableCell align='right'>Present</TableCell>
                   <TableCell align='right'>Room</TableCell>
                   <TableCell align='right'>Select Room</TableCell>
@@ -213,6 +215,8 @@ export default function Room(props) {
                       {' '}
                       {current_year - row.birthYear}
                     </TableCell>
+                    <TableCell align='right'> {row.guardianName}</TableCell>
+                    <TableCell align='right'> {row.guardianContact}</TableCell>
                     <TableCell align='right'> {row.present}</TableCell>
                     <TableCell align='right'>{row.room ?? ''}</TableCell>
                     <TableCell align='right'>

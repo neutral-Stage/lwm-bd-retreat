@@ -40,15 +40,18 @@ const SearchableTable = ({ participants, fellowship }) => {
       const serial = index + 1
       const serialNo = zeroPad(serial, 3)
       const regNo = felName + '-' + serialNo
-
+      var now = new Date()
+      var current_year = now.getFullYear()
       return {
         'Registration No.': regNo,
         Name: p.name,
         Phone: p.contact,
-        'Birth Date': p.birthDate,
+        Age: current_year - p.birthYear,
         Gender: p.gender,
         Present: p.present,
         RoomNo: p.roomNo,
+        'Guardian Name': p.guardianName,
+        'Guardian Contact': p.guardianContact,
       }
     })
     const workSheet = XLSX.utils.json_to_sheet(newData)
@@ -94,7 +97,10 @@ const SearchableTable = ({ participants, fellowship }) => {
                 <TableCell align='right'>Phone</TableCell>
                 <TableCell align='right'>Male/Female</TableCell>
                 <TableCell align='right'>Department</TableCell>
-                <TableCell align='center'>Room No.</TableCell>
+                <TableCell align='right'>Present</TableCell>
+                <TableCell align='right'>Guardian Name</TableCell>
+                <TableCell align='right'>Guardian Contact</TableCell>
+                <TableCell align='right'>Room No.</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -121,11 +127,24 @@ const SearchableTable = ({ participants, fellowship }) => {
                       {row.department}
                     </TableCell>
                     <TableCell
-                      align='center'
+                      align='right'
                       sx={{ textTransform: 'capitalize' }}
                     >
-                      {row.roomNo}
+                      {row.present}
                     </TableCell>
+                    <TableCell
+                      align='right'
+                      sx={{ textTransform: 'capitalize' }}
+                    >
+                      {row.guardianName}
+                    </TableCell>
+                    <TableCell
+                      align='right'
+                      sx={{ textTransform: 'capitalize' }}
+                    >
+                      {row.guardianContact}
+                    </TableCell>
+                    <TableCell align='center'>{row.roomNo}</TableCell>
                   </TableRow>
                 )
               })}
