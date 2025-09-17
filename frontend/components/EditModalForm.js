@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react'
 import Button from '@mui/material/Button'
 import TextField from '@mui/material/TextField'
@@ -310,7 +312,7 @@ const EditModalForm = ({
               views={['year']}
               value={year}
               onChange={(newValue) => handleYear(newValue._d)}
-              renderInput={(params) => <TextField {...params} />}
+              slotProps={{ textField: {} }}
             />
           </Grid>
           <Grid item xs={12}>
@@ -335,7 +337,7 @@ const EditModalForm = ({
                 inputFormat='DD/MM/yyyy'
                 value={date}
                 onChange={(newValue) => handleDate(newValue._d)}
-                renderInput={(params) => <TextField {...params} />}
+                slotProps={{ textField: {} }}
               />
             </Grid>
           ) : null}

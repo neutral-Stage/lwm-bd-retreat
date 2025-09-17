@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
@@ -6,10 +8,14 @@ import TableContainer from '@mui/material/TableContainer'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import Paper from '@mui/material/Paper'
-import SearchBar from 'material-ui-search-bar'
-import Typography from '@material-ui/core/Typography'
+import TextField from '@mui/material/TextField'
+import InputAdornment from '@mui/material/InputAdornment'
+import IconButton from '@mui/material/IconButton'
+import SearchIcon from '@mui/icons-material/Search'
+import ClearIcon from '@mui/icons-material/Clear'
+import Typography from '@mui/material/Typography'
+import Button from '@mui/material/Button'
 import * as XLSX from 'xlsx'
-import Button from '@material-ui/core/Button'
 
 const SearchableTable = ({ participants, fellowship }) => {
   const [rows, setRows] = useState(participants)
@@ -30,7 +36,7 @@ const SearchableTable = ({ participants, fellowship }) => {
 
   const cancelSearch = () => {
     setSearched('')
-    requestSearch(searched)
+    setRows(participants)
   }
   const zeroPad = (num, places) => String(num).padStart(places, '0')
 
@@ -83,10 +89,35 @@ const SearchableTable = ({ participants, fellowship }) => {
           </Button>
         </div>
 
-        <SearchBar
+        <TextField
+          variant="outlined"
+          placeholder="Search participants..."
           value={searched}
-          onChange={(searchVal) => requestSearch(searchVal)}
-          onCancelSearch={() => cancelSearch()}
+          onChange={(e) => {
+            setSearched(e.target.value)
+            requestSearch(e.target.value)
+          }}
+          size="small"
+          sx={{ margin: '1rem', minWidth: '300px' }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+            endAdornment: searched && (
+              <InputAdornment position="end">
+                <IconButton
+                  aria-label="clear search"
+                  onClick={cancelSearch}
+                  edge="end"
+                  size="small"
+                >
+                  <ClearIcon />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
         />
         <TableContainer>
           <Table aria-label='simple table'>
