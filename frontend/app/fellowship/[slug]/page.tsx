@@ -3,11 +3,10 @@ import { Metadata } from 'next';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
-import { getFellowshipParticipants } from '../../../lib/data-fetching';
-import { getFellowshipsWithSlugs, getNameFromSlug } from '../../../data/fellowship';
+import { getAllFellowships, getFellowshipBySlug, getFellowshipParticipantsBySlug } from '../../../lib/data-fetching';
 import SearchableTable from '../../../components/searchableTable';
 import { notFound } from 'next/navigation';
-import { Participant } from '../../../types/index';
+import { Participant, Fellowship } from '../../../types/index';
 
 interface FellowshipPageProps {
   params: {
@@ -17,17 +16,17 @@ interface FellowshipPageProps {
 
 // Generate static params for all fellowships
 export async function generateStaticParams() {
-  const fellowships = getFellowshipsWithSlugs();
+  const fellowships = await getAllFellowships();
   return fellowships.map((fellowship) => ({
-    slug: fellowship.slug,
+    slug: fellowship.slug.current,
   }));
 }
 
 // Generate metadata for each fellowship page
 export async function generateMetadata({ params }: FellowshipPageProps): Promise<Metadata> {
-  const fellowshipName = getNameFromSlug(params.slug);
+  const fellowship = await getFellowshipBySlug(params.slug);
   
-  if (!fellowshipName) {
+  if (!fellowship) {
     return {
       title: 'Fellowship Not Found',
       description: 'The requested fellowship page could not be found.',
@@ -35,11 +34,11 @@ export async function generateMetadata({ params }: FellowshipPageProps): Promise
   }
 
   return {
-    title: `${fellowshipName} - LWM BD Retreat`,
-    description: `Participant list and information for ${fellowshipName} at Living Waters Ministries Bangladesh Retreat.`,
+    title: `${fellowship.fellowship} - LWM BD Retreat`,
+    description: `Participant list and information for ${fellowship.fellowship} at Living Waters Ministries Bangladesh Retreat. ${fellowship.description || ''}`.trim(),
     openGraph: {
-      title: `${fellowshipName} - LWM BD Retreat`,
-      description: `Participant list and information for ${fellowshipName}`,
+      title: `${fellowship.fellowship} - LWM BD Retreat`,
+      description: `Participant list and information for ${fellowship.fellowship}`,
       type: 'website',
     },
   };
@@ -47,9 +46,9 @@ export async function generateMetadata({ params }: FellowshipPageProps): Promise
 
 // Server component with ISR data fetching
 export default async function FellowshipPage({ params }: FellowshipPageProps) {
-  const fellowshipName = getNameFromSlug(params.slug);
+  const fellowship = await getFellowshipBySlug(params.slug);
 
-  if (!fellowshipName) {
+  if (!fellowship) {
     notFound();
   }
 
@@ -58,7 +57,7 @@ export default async function FellowshipPage({ params }: FellowshipPageProps) {
 
   try {
     // Server-side data fetching with ISR (revalidates every hour)
-    const fetchedParticipants = await getFellowshipParticipants(fellowshipName);
+    const fetchedParticipants = await getFellowshipParticipantsBySlug(params.slug);
     participants = Array.isArray(fetchedParticipants) ? fetchedParticipants : [];
   } catch (err) {
     console.error('Error fetching participants:', err);
@@ -79,13 +78,51 @@ export default async function FellowshipPage({ params }: FellowshipPageProps) {
             marginBottom: '1.5rem'
           }}
         >
-          {fellowshipName}
+          {fellowship.fellowship}
+        </Typography>
+
+        {fellowship.description && (
+          <Typography
+            variant="body1"
+            color="text.primary"
+            sx={{ marginBottom: '1rem' }}
+          >
+            {fellowship.description}
+          </Typography>
+        )}
+
+        {fellowship.incharge && (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ marginBottom: '0.5rem' }}
+          >
+            <strong>In Charge:</strong> {fellowship.incharge}
+          </Typography>
+        )}
+
+        {fellowship.leaders && (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ marginBottom: '0.5rem' }}
+          >
+            <strong>Leaders:</strong> {fellowship.leaders}
+          </Typography>
+        )}
+
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ marginBottom: '0.5rem' }}
+        >
+          <strong>Division:</strong> {fellowship.division}
         </Typography>
 
         <Typography
           variant="body1"
           color="text.secondary"
-          sx={{ marginBottom: '2rem' }}
+          sx={{ marginBottom: '2rem', marginTop: '1rem' }}
         >
           Total Participants: {participants?.length || 0}
         </Typography>
@@ -102,7 +139,7 @@ export default async function FellowshipPage({ params }: FellowshipPageProps) {
 
         <SearchableTable
           data={participants || []}
-          fellowship={fellowshipName}
+          fellowship={fellowship.fellowship}
         />
       </Container>
     </Box>

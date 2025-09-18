@@ -1,5 +1,5 @@
 import { client } from '../service/sanityClient';
-import { Participant, Room } from '../types/index';
+import { Participant, Room, Fellowship } from '../types/index';
 
 // Cache configuration
 const REVALIDATE_TIME = 3600; // 1 hour in seconds
@@ -259,5 +259,116 @@ export function isValidRoom(data: any): data is Room {
     typeof data.roomNo === 'string' &&
     typeof data.capacity === 'number' &&
     typeof data.occupied === 'number'
+  );
+}
+
+// Fellowship data fetching functions
+export async function getAllFellowships(): Promise<Fellowship[]> {
+  try {
+    const fellowships = await client.fetch(
+      `*[_type == "fellowship"] | order(fellowship asc) {
+        _id,
+        _type,
+        _createdAt,
+        _updatedAt,
+        fellowship,
+        slug,
+        incharge,
+        leaders,
+        description,
+        division
+      }`,
+      {},
+      {
+        next: { revalidate: REVALIDATE_TIME },
+      }
+    );
+
+    return Array.isArray(fellowships) ? fellowships : [];
+  } catch (error) {
+    console.error('Error fetching fellowships:', error);
+    return [];
+  }
+}
+
+export async function getFellowshipBySlug(slug: string): Promise<Fellowship | null> {
+  try {
+    const fellowship = await client.fetch(
+      `*[_type == "fellowship" && slug.current == $slug][0] {
+        _id,
+        _type,
+        _createdAt,
+        _updatedAt,
+        fellowship,
+        slug,
+        incharge,
+        leaders,
+        description,
+        division
+      }`,
+      { slug },
+      {
+        next: { revalidate: REVALIDATE_TIME },
+      }
+    );
+
+    return fellowship || null;
+  } catch (error) {
+    console.error('Error fetching fellowship by slug:', error);
+    return null;
+  }
+}
+
+export async function getFellowshipParticipantsBySlug(
+  slug: string
+): Promise<Participant[]> {
+  try {
+    // First get the fellowship name from the slug
+    const fellowship = await getFellowshipBySlug(slug);
+    if (!fellowship) {
+      return [];
+    }
+
+    // Then fetch participants using the fellowship name
+    const participants = await client.fetch(
+      `*[_type == "participant" && fellowshipName == $fellowshipName && present == "present"]{
+        _id,
+        regNo,
+        name,
+        contact,
+        guardianName,
+        guardianContact,
+        gender,
+        department,
+        fellowshipName,
+        present,
+        isSaved,
+        salvationDate,
+        birthYear,
+        "roomNo": roomNo->roomNo,
+        _createdAt
+      } | order(_createdAt desc)`,
+      { fellowshipName: fellowship.fellowship },
+      {
+        next: { revalidate: REVALIDATE_TIME },
+      }
+    );
+
+    return Array.isArray(participants) ? participants : [];
+  } catch (error) {
+    console.error('Error fetching fellowship participants by slug:', error);
+    return [];
+  }
+}
+
+export function isValidFellowship(data: any): data is Fellowship {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    typeof data._id === 'string' &&
+    typeof data.fellowship === 'string' &&
+    typeof data.slug === 'object' &&
+    typeof data.slug.current === 'string' &&
+    typeof data.division === 'string'
   );
 }

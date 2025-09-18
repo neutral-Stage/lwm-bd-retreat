@@ -38,8 +38,18 @@ export interface Room {
 }
 
 export interface Fellowship {
-  name: string;
-  slug: string;
+  _id: string;
+  _type: 'fellowship';
+  _createdAt: string;
+  _updatedAt: string;
+  fellowship: string;
+  slug: {
+    current: string;
+  };
+  incharge?: string;
+  leaders?: string;
+  description?: string;
+  division: string;
 }
 
 export interface PageProps {
