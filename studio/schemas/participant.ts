@@ -57,6 +57,12 @@ export default defineType({
       type: "string",
     }),
     defineField({
+      name: "area",
+      title: "Area",
+      type: "string",
+      description: "Geographic area or region",
+    }),
+    defineField({
       name: "gender",
       title: "Male/Female",
       type: "string",

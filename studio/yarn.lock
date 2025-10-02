@@ -3356,6 +3356,11 @@ cssstyle@^4.0.1, cssstyle@^4.2.1:
 csstype@^3.0.2, csstype@^3.1.3, csstype@3.1.3:
   version "3.1.3"
 
+csv-parser@^3.2.0:
+  version "3.2.0"
+  resolved "https://registry.npmjs.org/csv-parser/-/csv-parser-3.2.0.tgz"
+  integrity sha512-fgKbp+AJbn1h2dcAHKIdKNSSjfp43BZZykXsCjzALjKy80VXQNHPFJ6T9Afwdzoj24aMkq8GwDS7KGcDPpejrA==
+
 custom-media-element@~1.4.5:
   version "1.4.5"
 

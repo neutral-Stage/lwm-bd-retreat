@@ -1,33 +1,37 @@
 export interface Participant {
   _id: string;
-  _type?: 'participant';
+  _type?: "participant";
   _createdAt?: string;
   _updatedAt?: string;
-  regNo?: string;
+  regNo?: string | null;
   name: string;
-  contact: string;
+  contact?: string | null;
   phone?: string;
-  birthYear?: number;
-  age?: number;
-  gender: 'male' | 'female';
-  present: 'present' | 'absent';
+  birthYear?: number | null;
+  age?: number | null;
+  gender: "male" | "female";
+  present: "present" | "absent";
   isSaved?: boolean;
-  guestOrSaved?: 'guest' | 'saved';
-  salvationDate?: string;
+  guestOrSaved?: "guest" | "saved";
+  salvationDate?: string | null;
   fellowshipName: string;
-  department?: string;
-  guardianName?: string;
-  guardianContact?: string;
+  area?: string | null;
+  department?: string | null;
+  guardianName?: string | null;
+  guardianContact?: string | null;
   room?: string;
   feePaid?: boolean;
-  roomNo?: {
-    roomNo: string;
-  } | string;
+  roomNo?:
+    | {
+        roomNo: string;
+      }
+    | string
+    | null;
 }
 
 export interface Room {
   _id: string;
-  _type: 'room';
+  _type: "room";
   _createdAt: string;
   _updatedAt: string;
   roomNo: string;
@@ -39,7 +43,7 @@ export interface Room {
 
 export interface Fellowship {
   _id: string;
-  _type: 'fellowship';
+  _type: "fellowship";
   _createdAt: string;
   _updatedAt: string;
   fellowship: string;
