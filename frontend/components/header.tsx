@@ -1,27 +1,29 @@
-'use client';
-import * as React from 'react';
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import MenuIcon from '@mui/icons-material/Menu';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import Box from '@mui/material/Box';
-import Link from 'next/link';
-import { styled } from '@mui/material/styles';
+"use client";
+import * as React from "react";
+import AppBar from "@mui/material/AppBar";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import MenuIcon from "@mui/icons-material/Menu";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Box from "@mui/material/Box";
+import Link from "next/link";
+import { styled } from "@mui/material/styles";
 
 const StyledLink = styled(Link)(({ theme }) => ({
-  textDecoration: 'none',
-  color: 'inherit',
+  textDecoration: "none",
+  color: "inherit",
 }));
 
 interface HeaderProps {
   title?: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ title = 'LWM BD Retreat' }) => {
+export const Header: React.FC<HeaderProps> = ({
+  title = "BLWM Retreat- Oct 2025",
+}) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -34,34 +36,30 @@ export const Header: React.FC<HeaderProps> = ({ title = 'LWM BD Retreat' }) => {
   };
 
   const navigationItems = [
-    { label: 'Fellowship', href: '/fellowship' },
-    { label: 'List', href: '/list' },
-    { label: 'Groups', href: '/groups' },
-    { label: 'Counselling', href: '/counselling' }
+    { label: "Fellowship", href: "/fellowship" },
+    { label: "List", href: "/list" },
+    { label: "Groups", href: "/groups" },
+    { label: "Counselling", href: "/counselling" },
   ];
 
   return (
     <AppBar position="static">
       <Toolbar>
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          <StyledLink href="/">
-            {title}
-          </StyledLink>
+          <StyledLink href="/">{title}</StyledLink>
         </Typography>
-        
+
         {/* Desktop Navigation */}
-        <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
+        <Box sx={{ display: { xs: "none", md: "flex" } }}>
           {navigationItems.map((item) => (
             <Button key={item.href} color="inherit">
-              <StyledLink href={item.href}>
-                {item.label}
-              </StyledLink>
+              <StyledLink href={item.href}>{item.label}</StyledLink>
             </Button>
           ))}
         </Box>
 
         {/* Mobile Navigation */}
-        <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
+        <Box sx={{ display: { xs: "flex", md: "none" } }}>
           <IconButton
             size="large"
             edge="start"
@@ -76,14 +74,12 @@ export const Header: React.FC<HeaderProps> = ({ title = 'LWM BD Retreat' }) => {
             open={open}
             onClose={handleMenuClose}
             MenuListProps={{
-              'aria-labelledby': 'basic-button',
+              "aria-labelledby": "basic-button",
             }}
           >
             {navigationItems.map((item) => (
               <MenuItem key={item.href} onClick={handleMenuClose}>
-                <StyledLink href={item.href}>
-                  {item.label}
-                </StyledLink>
+                <StyledLink href={item.href}>{item.label}</StyledLink>
               </MenuItem>
             ))}
           </Menu>

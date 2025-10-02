@@ -1,22 +1,22 @@
-import type { Metadata } from 'next'
-import { AppProvider } from '../contexts/AppContext'
-import { CustomThemeProvider } from '../contexts/ThemeProvider'
-import Header from '../components/header'
+import type { Metadata } from "next";
+import { AppProvider } from "../contexts/AppContext";
+import { CustomThemeProvider } from "../contexts/ThemeProvider";
+import Header from "../components/header";
 
 export const metadata: Metadata = {
-  title: 'LWM BD Retreat',
-  description: 'Living Waters Ministries Bangladesh Retreat Management System',
-}
+  title: "BLWM Retreat- Oct 2025",
+  description: "Living Waters Ministries Bangladesh Retreat Management System",
+};
 
 export const viewport = {
-  width: 'device-width',
+  width: "device-width",
   initialScale: 1,
-}
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en">
@@ -29,5 +29,5 @@ export default function RootLayout({
         </AppProvider>
       </body>
     </html>
-  )
+  );
 }
