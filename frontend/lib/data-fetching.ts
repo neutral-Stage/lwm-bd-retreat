@@ -1,5 +1,5 @@
 import { client } from "../service/sanityClient";
-import { Participant, Room, Fellowship } from "../types/index";
+import { Participant, Room, Fellowship, Group, Counselling } from "../types/index";
 
 // Cache configuration
 const REVALIDATE_TIME = 3600; // 1 hour in seconds
@@ -429,6 +429,530 @@ export function isValidFellowship(data: any): data is Fellowship {
     typeof data.slug.current === "string" &&
     typeof data.division === "string"
   );
+}
+
+// Group data fetching functions
+export async function getAllGroups(): Promise<Group[]> {
+  try {
+    const groups = await client.fetch(
+      `*[_type == "group"] | order(name asc) {
+        _id,
+        _type,
+        _createdAt,
+        _updatedAt,
+        name,
+        slug,
+        description,
+        "participants": participants[]->{
+          _id,
+          name,
+          contact,
+          department,
+          fellowshipName,
+          gender,
+          present
+        },
+        "volunteers": volunteers[]->{
+          _id,
+          name,
+          contact,
+          department,
+          fellowshipName,
+          gender,
+          present
+        }
+      }`,
+      {},
+      {
+        cache: "no-store", // Always fetch fresh data for admin
+      }
+    );
+
+    return Array.isArray(groups) ? groups : [];
+  } catch (error) {
+    console.error("Error fetching groups:", error);
+    return [];
+  }
+}
+
+export async function getGroupById(id: string): Promise<Group | null> {
+  try {
+    const group = await client.fetch(
+      `*[_type == "group" && _id == $id][0] {
+        _id,
+        _type,
+        _createdAt,
+        _updatedAt,
+        name,
+        slug,
+        description,
+        "participants": participants[]->{
+          _id,
+          name,
+          contact,
+          department,
+          fellowshipName,
+          gender,
+          present
+        },
+        "volunteers": volunteers[]->{
+          _id,
+          name,
+          contact,
+          department,
+          fellowshipName,
+          gender,
+          present
+        }
+      }`,
+      { id },
+      {
+        next: { revalidate: REVALIDATE_TIME },
+      }
+    );
+
+    return group || null;
+  } catch (error) {
+    console.error("Error fetching group by ID:", error);
+    return null;
+  }
+}
+
+export async function createGroup(groupData: {
+  name: string;
+  description?: string;
+  participants?: string[];
+  volunteers?: string[];
+}): Promise<Group> {
+  try {
+    const participantRefs = groupData.participants?.map(id => ({
+      _ref: id,
+      _type: "reference"
+    })) || [];
+
+    const volunteerRefs = groupData.volunteers?.map(id => ({
+      _ref: id,
+      _type: "reference"
+    })) || [];
+
+    const result = await client.create({
+      _type: "group",
+      name: groupData.name,
+      slug: {
+        _type: "slug",
+        current: groupData.name.toLowerCase().replace(/\s+/g, "-")
+      },
+      description: groupData.description || "",
+      participants: participantRefs,
+      volunteers: volunteerRefs,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    if (!isValidGroup(result)) {
+      throw new Error("Invalid group data returned from server");
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error creating group:", error);
+    throw new Error("Failed to create group");
+  }
+}
+
+export async function updateGroup(
+  id: string,
+  updates: Partial<Group>
+): Promise<Group> {
+  try {
+    const updateData: any = { ...updates };
+
+    // Handle participants and volunteers references
+    if (updates.participants) {
+      updateData.participants = updates.participants.map(p =>
+        typeof p === 'string' ? { _ref: p, _type: "reference" } : p
+      );
+    }
+
+    if (updates.volunteers) {
+      updateData.volunteers = updates.volunteers.map(v =>
+        typeof v === 'string' ? { _ref: v, _type: "reference" } : v
+      );
+    }
+
+    updateData.updatedAt = new Date().toISOString();
+
+    const result = await client.patch(id).set(updateData).commit();
+
+    if (!isValidGroup(result)) {
+      throw new Error("Invalid group data returned from server");
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error updating group:", error);
+    throw new Error("Failed to update group");
+  }
+}
+
+export async function deleteGroup(id: string): Promise<void> {
+  try {
+    await client.delete(id);
+  } catch (error) {
+    console.error("Error deleting group:", error);
+    throw new Error("Failed to delete group");
+  }
+}
+
+export function isValidGroup(data: any): data is Group {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    typeof data._id === "string" &&
+    typeof data.name === "string"
+  );
+}
+
+// Get participants available for groups (exclude those already in groups if needed)
+export async function getAvailableParticipants(): Promise<Participant[]> {
+  try {
+    const participants = await client.fetch(
+      `*[_type == "participant" && department != "volunteer" && present == "present"]{
+        _id,
+        name,
+        contact,
+        department,
+        fellowshipName,
+        gender,
+        present
+      } | order(name asc)`,
+      {},
+      {
+        cache: "no-store",
+      }
+    );
+
+    return Array.isArray(participants) ? participants : [];
+  } catch (error) {
+    console.error("Error fetching available participants:", error);
+    return [];
+  }
+}
+
+// Get volunteers available for groups
+export async function getAvailableVolunteers(): Promise<Participant[]> {
+  try {
+    const volunteers = await client.fetch(
+      `*[_type == "participant" && department == "volunteer" && present == "present"]{
+        _id,
+        name,
+        contact,
+        department,
+        fellowshipName,
+        gender,
+        present
+      } | order(name asc)`,
+      {},
+      {
+        cache: "no-store",
+      }
+    );
+
+    return Array.isArray(volunteers) ? volunteers : [];
+  } catch (error) {
+    console.error("Error fetching available volunteers:", error);
+    return [];
+  }
+}
+
+// Counselling data fetching functions
+export async function getAllCounsellings(): Promise<Counselling[]> {
+  try {
+    const counsellings = await client.fetch(
+      `*[_type == "counselling"] | order(name asc) {
+        _id,
+        _type,
+        _createdAt,
+        _updatedAt,
+        name,
+        slug,
+        description,
+        "counsellor": counsellor->{
+          _id,
+          name,
+          contact,
+          department,
+          fellowshipName,
+          gender,
+          present
+        },
+        "participants": participants[]->{
+          _id,
+          name,
+          contact,
+          department,
+          fellowshipName,
+          gender,
+          present
+        },
+        meetingSchedule,
+        location,
+        status,
+        notes
+      }`,
+      {},
+      {
+        cache: "no-store", // Always fetch fresh data for admin
+      }
+    );
+
+    return Array.isArray(counsellings) ? counsellings : [];
+  } catch (error) {
+    console.error("Error fetching counsellings:", error);
+    return [];
+  }
+}
+
+export async function getCounsellingById(id: string): Promise<Counselling | null> {
+  try {
+    const counselling = await client.fetch(
+      `*[_type == "counselling" && _id == $id][0] {
+        _id,
+        _type,
+        _createdAt,
+        _updatedAt,
+        name,
+        slug,
+        description,
+        "counsellor": counsellor->{
+          _id,
+          name,
+          contact,
+          department,
+          fellowshipName,
+          gender,
+          present
+        },
+        "participants": participants[]->{
+          _id,
+          name,
+          contact,
+          department,
+          fellowshipName,
+          gender,
+          present
+        },
+        meetingSchedule,
+        location,
+        status,
+        notes
+      }`,
+      { id },
+      {
+        next: { revalidate: REVALIDATE_TIME },
+      }
+    );
+
+    return counselling || null;
+  } catch (error) {
+    console.error("Error fetching counselling by ID:", error);
+    return null;
+  }
+}
+
+export async function createCounselling(counsellingData: {
+  name: string;
+  description?: string;
+  counsellor: string;
+  participants: string[];
+  meetingSchedule?: string;
+  location?: string;
+  status?: "active" | "inactive" | "completed";
+  notes?: string;
+}): Promise<Counselling> {
+  try {
+    const counsellorRef = {
+      _ref: counsellingData.counsellor,
+      _type: "reference"
+    };
+
+    const participantRefs = counsellingData.participants.map(id => ({
+      _ref: id,
+      _type: "reference"
+    }));
+
+    const result = await client.create({
+      _type: "counselling",
+      name: counsellingData.name,
+      slug: {
+        _type: "slug",
+        current: counsellingData.name.toLowerCase().replace(/\s+/g, "-")
+      },
+      description: counsellingData.description || "",
+      counsellor: counsellorRef,
+      participants: participantRefs,
+      meetingSchedule: counsellingData.meetingSchedule || "",
+      location: counsellingData.location || "",
+      status: counsellingData.status || "active",
+      notes: counsellingData.notes || "",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    if (!isValidCounselling(result)) {
+      throw new Error("Invalid counselling data returned from server");
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error creating counselling:", error);
+    throw new Error("Failed to create counselling team");
+  }
+}
+
+export async function updateCounselling(
+  id: string,
+  updates: Partial<Counselling>
+): Promise<Counselling> {
+  try {
+    const updateData: any = { ...updates };
+
+    // Handle counsellor reference
+    if (updates.counsellor) {
+      updateData.counsellor = typeof updates.counsellor === 'string'
+        ? { _ref: updates.counsellor, _type: "reference" }
+        : updates.counsellor;
+    }
+
+    // Handle participants references
+    if (updates.participants) {
+      updateData.participants = updates.participants.map(p =>
+        typeof p === 'string' ? { _ref: p, _type: "reference" } : p
+      );
+    }
+
+    updateData.updatedAt = new Date().toISOString();
+
+    const result = await client.patch(id).set(updateData).commit();
+
+    if (!isValidCounselling(result)) {
+      throw new Error("Invalid counselling data returned from server");
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error updating counselling:", error);
+    throw new Error("Failed to update counselling team");
+  }
+}
+
+export async function deleteCounselling(id: string): Promise<void> {
+  try {
+    await client.delete(id);
+  } catch (error) {
+    console.error("Error deleting counselling:", error);
+    throw new Error("Failed to delete counselling team");
+  }
+}
+
+export function isValidCounselling(data: any): data is Counselling {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    typeof data._id === "string" &&
+    typeof data.name === "string"
+  );
+}
+
+// Get volunteers available for counselling (not already assigned as counsellors)
+export async function getAvailableCounsellors(): Promise<Participant[]> {
+  try {
+    const volunteers = await client.fetch(
+      `*[_type == "participant" && department == "volunteer" && present == "present"]{
+        _id,
+        name,
+        contact,
+        department,
+        fellowshipName,
+        gender,
+        present
+      } | order(name asc)`,
+      {},
+      {
+        cache: "no-store",
+      }
+    );
+
+    return Array.isArray(volunteers) ? volunteers : [];
+  } catch (error) {
+    console.error("Error fetching available counsellors:", error);
+    return [];
+  }
+}
+
+// Get participants available for counselling (not already assigned to counselling teams)
+export async function getAvailableCounsellingParticipants(): Promise<Participant[]> {
+  try {
+    const participants = await client.fetch(
+      `*[_type == "participant" && department != "volunteer" && present == "present"]{
+        _id,
+        name,
+        contact,
+        department,
+        fellowshipName,
+        gender,
+        present
+      } | order(name asc)`,
+      {},
+      {
+        cache: "no-store",
+      }
+    );
+
+    return Array.isArray(participants) ? participants : [];
+  } catch (error) {
+    console.error("Error fetching available counselling participants:", error);
+    return [];
+  }
+}
+
+// Get participants and volunteers already assigned to counselling teams
+export async function getAssignedCounsellingMembers(): Promise<{
+  counsellors: string[];
+  participants: string[];
+}> {
+  try {
+    const counsellings = await client.fetch(
+      `*[_type == "counselling"]{
+        "counsellor": counsellor._ref,
+        "participants": participants[]._ref
+      }`,
+      {},
+      {
+        cache: "no-store",
+      }
+    );
+
+    const counsellors = new Set<string>();
+    const participants = new Set<string>();
+
+    counsellings.forEach((counselling: any) => {
+      if (counselling.counsellor) {
+        counsellors.add(counselling.counsellor);
+      }
+      if (counselling.participants) {
+        counselling.participants.forEach((p: string) => participants.add(p));
+      }
+    });
+
+    return {
+      counsellors: Array.from(counsellors),
+      participants: Array.from(participants),
+    };
+  } catch (error) {
+    console.error("Error fetching assigned counselling members:", error);
+    return { counsellors: [], participants: [] };
+  }
 }
 
 // Connection utility functions (no longer needed for UI)

@@ -87,3 +87,35 @@ export interface RoomSelectionProps {
   selectedRoom?: string;
   onRoomSelect: (roomId: string) => void;
 }
+
+export interface Group {
+  _id: string;
+  _type: "group";
+  _createdAt: string;
+  _updatedAt: string;
+  name: string;
+  slug: {
+    current: string;
+  };
+  description?: string;
+  participants: Participant[];
+  volunteers: Participant[];
+}
+
+export interface Counselling {
+  _id: string;
+  _type: "counselling";
+  _createdAt: string;
+  _updatedAt: string;
+  name: string;
+  slug: {
+    current: string;
+  };
+  description?: string;
+  counsellor: Participant;
+  participants: Participant[];
+  meetingSchedule?: string;
+  location?: string;
+  status: "active" | "inactive" | "completed";
+  notes?: string;
+}

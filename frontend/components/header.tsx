@@ -35,7 +35,9 @@ export const Header: React.FC<HeaderProps> = ({ title = 'LWM BD Retreat' }) => {
 
   const navigationItems = [
     { label: 'Fellowship', href: '/fellowship' },
-    { label: 'List', href: '/list' }
+    { label: 'List', href: '/list' },
+    { label: 'Groups', href: '/groups' },
+    { label: 'Counselling', href: '/counselling' }
   ];
 
   return (

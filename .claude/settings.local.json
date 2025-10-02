@@ -9,7 +9,9 @@
       "Bash(timeout 5 npm run lint)",
       "Bash(npm install:*)",
       "Bash(yarn add:*)",
-      "Bash(yarn build)"
+      "Bash(yarn build)",
+      "Bash(timeout 10 npm run dev)",
+      "Bash(timeout 60 npm run build)"
     ],
     "deny": [],
     "ask": []
