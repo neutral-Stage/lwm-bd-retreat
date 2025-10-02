@@ -102,6 +102,13 @@ export interface Group {
   volunteers: Participant[];
 }
 
+export interface CounsellingParticipant {
+  participant: Participant;
+  status: "done" | "pending";
+  comments: string;
+  _id?: string; // For tracking individual counselling participant records
+}
+
 export interface Counselling {
   _id: string;
   _type: "counselling";
@@ -113,7 +120,7 @@ export interface Counselling {
   };
   description?: string;
   counsellor: Participant;
-  participants: Participant[];
+  participants: CounsellingParticipant[];
   meetingSchedule?: string;
   location?: string;
   status: "active" | "inactive" | "completed";

@@ -49,7 +49,7 @@ export default defineType({
     }),
     defineField({
       name: "participants",
-      title: "Participants",
+      title: "Participants (Legacy)",
       type: "array",
       of: [
         {
@@ -60,8 +60,21 @@ export default defineType({
           },
         },
       ],
+      validation: (Rule) => Rule.min(0).max(20),
+      description: "Legacy participants list - use counsellingParticipants instead",
+      hidden: true,
+    }),
+    defineField({
+      name: "counsellingParticipants",
+      title: "Counselling Participants",
+      type: "array",
+      of: [
+        {
+          type: "counsellingParticipant",
+        },
+      ],
       validation: (Rule) => Rule.min(1).max(20),
-      description: "List of participants assigned to this counselling team (excluding volunteers)",
+      description: "List of participants with their counselling status and comments",
     }),
     defineField({
       name: "meetingSchedule",

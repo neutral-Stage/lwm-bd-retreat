@@ -5,6 +5,7 @@ import {
   Fellowship,
   Group,
   Counselling,
+  CounsellingParticipant,
 } from "../types/index";
 
 // Cache configuration
@@ -791,15 +792,36 @@ export async function getAllCounsellings(): Promise<Counselling[]> {
           gender,
           present
         },
-        "participants": participants[]->{
-          _id,
-          name,
-          contact,
-          department,
-          fellowshipName,
-          gender,
-          present
-        },
+        "participants": coalesce(
+          counsellingParticipants[]{
+            _id,
+            "participant": participant->{
+              _id,
+              name,
+              contact,
+              department,
+              fellowshipName,
+              gender,
+              present
+            },
+            status,
+            comments
+          },
+          participants[]->{
+            "participant": {
+              _id,
+              name,
+              contact,
+              department,
+              fellowshipName,
+              gender,
+              present
+            },
+            "status": "pending",
+            "comments": "",
+            "_id": null
+          }
+        ),
         meetingSchedule,
         location,
         status,
@@ -840,15 +862,36 @@ export async function getCounsellingById(
           gender,
           present
         },
-        "participants": participants[]->{
-          _id,
-          name,
-          contact,
-          department,
-          fellowshipName,
-          gender,
-          present
-        },
+        "participants": coalesce(
+          counsellingParticipants[]{
+            _id,
+            "participant": participant->{
+              _id,
+              name,
+              contact,
+              department,
+              fellowshipName,
+              gender,
+              present
+            },
+            status,
+            comments
+          },
+          participants[]->{
+            "participant": {
+              _id,
+              name,
+              contact,
+              department,
+              fellowshipName,
+              gender,
+              present
+            },
+            "status": "pending",
+            "comments": "",
+            "_id": null
+          }
+        ),
         meetingSchedule,
         location,
         status,
@@ -871,7 +914,7 @@ export async function createCounselling(counsellingData: {
   name: string;
   description?: string;
   counsellor: string;
-  participants: string[];
+  participants: string[] | { participantId: string; status: "done" | "pending"; comments: string }[];
   meetingSchedule?: string;
   location?: string;
   status?: "active" | "inactive" | "completed";
@@ -883,12 +926,30 @@ export async function createCounselling(counsellingData: {
       _type: "reference",
     };
 
-    const participantRefs = counsellingData.participants.map((id) => ({
-      _ref: id,
-      _type: "reference",
-    }));
+    // Handle both old format (string[]) and new format (CounsellingParticipant[])
+    const participantRefs = Array.isArray(counsellingData.participants) &&
+      typeof counsellingData.participants[0] === 'string'
+      ? counsellingData.participants.map((id) => ({
+          _ref: id,
+          _type: "reference",
+        }))
+      : null;
 
-    const result = await client.create({
+    const counsellingParticipants = Array.isArray(counsellingData.participants) &&
+      typeof counsellingData.participants[0] === 'object'
+      ? (counsellingData.participants as { participantId: string; status: "done" | "pending"; comments: string }[]).map((cp, index) => ({
+          _type: "counsellingParticipant",
+          _key: `cp-${cp.participantId}-${Date.now()}-${index}`, // Generate unique key
+          participant: {
+            _ref: cp.participantId,
+            _type: "reference",
+          },
+          status: cp.status,
+          comments: cp.comments,
+        }))
+      : [];
+
+    const createData: any = {
       _type: "counselling",
       name: counsellingData.name,
       slug: {
@@ -897,20 +958,35 @@ export async function createCounselling(counsellingData: {
       },
       description: counsellingData.description || "",
       counsellor: counsellorRef,
-      participants: participantRefs,
       meetingSchedule: counsellingData.meetingSchedule || "",
       location: counsellingData.location || "",
       status: counsellingData.status || "active",
       notes: counsellingData.notes || "",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    });
+    };
 
-    if (!isValidCounselling(result)) {
-      throw new Error("Invalid counselling data returned from server");
+    // Use new counsellingParticipants structure if available, otherwise fall back to old participants
+    if (counsellingParticipants.length > 0) {
+      createData.counsellingParticipants = counsellingParticipants;
+    } else if (participantRefs) {
+      createData.participants = participantRefs;
     }
 
-    return result;
+    const result = await client.create(createData);
+
+    if (!result || !result._id) {
+      throw new Error("Failed to create counselling team");
+    }
+
+    // Fetch the complete counselling data with populated references
+    const populatedCounselling = await getCounsellingById(result._id);
+
+    if (!populatedCounselling) {
+      throw new Error("Failed to fetch created counselling team");
+    }
+
+    return populatedCounselling;
   } catch (error) {
     console.error("Error creating counselling:", error);
     throw new Error("Failed to create counselling team");
@@ -929,25 +1005,48 @@ export async function updateCounselling(
       updateData.counsellor =
         typeof updates.counsellor === "string"
           ? { _ref: updates.counsellor, _type: "reference" }
-          : updates.counsellor;
+          : { _ref: updates.counsellor._id, _type: "reference" };
     }
 
-    // Handle participants references
+    // Handle participants references - support both old and new formats
     if (updates.participants) {
-      updateData.participants = updates.participants.map((p) =>
-        typeof p === "string" ? { _ref: p, _type: "reference" } : p
-      );
+      // Check if it's the new CounsellingParticipant format
+      if (updates.participants.length > 0 && 'participant' in updates.participants[0]) {
+        updateData.counsellingParticipants = updates.participants.map((cp: any, index: number) => ({
+          _type: "counsellingParticipant",
+          _key: cp._key || `cp-${typeof cp.participant === "string" ? cp.participant : cp.participant._id}-${Date.now()}-${index}`,
+          participant: typeof cp.participant === "string"
+            ? { _ref: cp.participant, _type: "reference" }
+            : { _ref: cp.participant._id, _type: "reference" },
+          status: cp.status || "pending",
+          comments: cp.comments || "",
+        }));
+        // Clear old participants field if using new structure
+        updateData.participants = undefined;
+      } else {
+        // Legacy format - array of participant IDs or references
+        updateData.participants = updates.participants.map((p) =>
+          typeof p === "string" ? { _ref: p, _type: "reference" } : p
+        );
+      }
     }
 
     updateData.updatedAt = new Date().toISOString();
 
     const result = await client.patch(id).set(updateData).commit();
 
-    if (!isValidCounselling(result)) {
-      throw new Error("Invalid counselling data returned from server");
+    if (!result || !result._id) {
+      throw new Error("Failed to update counselling team");
     }
 
-    return result;
+    // Fetch the complete counselling data with populated references
+    const populatedCounselling = await getCounsellingById(result._id);
+
+    if (!populatedCounselling) {
+      throw new Error("Failed to fetch updated counselling team");
+    }
+
+    return populatedCounselling;
   } catch (error) {
     console.error("Error updating counselling:", error);
     throw new Error("Failed to update counselling team");
@@ -1062,6 +1161,121 @@ export async function getAssignedCounsellingMembers(): Promise<{
   } catch (error) {
     console.error("Error fetching assigned counselling members:", error);
     return { counsellors: [], participants: [] };
+  }
+}
+
+// Update counselling participant status and comments
+export async function updateCounsellingParticipant(
+  counsellingId: string,
+  participantId: string,
+  updates: { status?: "done" | "pending"; comments?: string }
+): Promise<void> {
+  try {
+    // First, get the current counselling document
+    const counselling = await client.fetch(
+      `*[_type == "counselling" && _id == $counsellingId][0]{
+        _id,
+        counsellingParticipants[]{
+          _id,
+          _key,
+          participant,
+          status,
+          comments
+        },
+        participants
+      }`,
+      { counsellingId }
+    );
+
+    if (!counselling) {
+      throw new Error("Counselling not found");
+    }
+
+    // Check if using new counsellingParticipants structure
+    if (counselling.counsellingParticipants && counselling.counsellingParticipants.length > 0) {
+      // Find the participant entry in counsellingParticipants
+      const participantIndex = counselling.counsellingParticipants.findIndex(
+        (cp: any) => cp.participant._ref === participantId
+      );
+
+      if (participantIndex === -1) {
+        throw new Error("Participant not found in counselling team");
+      }
+
+      const participantEntry = counselling.counsellingParticipants[participantIndex];
+
+      // Create updated participant object
+      const updatedParticipant = {
+        ...participantEntry,
+        status: updates.status ?? participantEntry.status,
+        comments: updates.comments ?? participantEntry.comments,
+      };
+
+      // Replace the entire counsellingParticipants array with updated version
+      const updatedCounsellingParticipants = [...counselling.counsellingParticipants];
+      updatedCounsellingParticipants[participantIndex] = updatedParticipant;
+
+      await client.patch(counsellingId)
+        .set({
+          counsellingParticipants: updatedCounsellingParticipants,
+          updatedAt: new Date().toISOString(),
+        })
+        .commit();
+    } else {
+      // Legacy approach: Convert to new structure first
+      if (!counselling.participants || counselling.participants.length === 0) {
+        throw new Error("No participants found in counselling team");
+      }
+
+      // Create counsellingParticipants from legacy participants
+      const counsellingParticipants = counselling.participants.map((p: any, index: number) => ({
+        _type: "counsellingParticipant",
+        _key: `cp-${p._ref}-${Date.now()}-${index}`,
+        participant: p,
+        status: p._ref === participantId ? (updates.status || "pending") : "pending",
+        comments: p._ref === participantId ? (updates.comments || "") : "",
+      }));
+
+      await client.patch(counsellingId)
+        .set({
+          counsellingParticipants: counsellingParticipants,
+          updatedAt: new Date().toISOString(),
+        })
+        .commit();
+    }
+  } catch (error) {
+    console.error("Error updating counselling participant:", error);
+    throw new Error("Failed to update participant status");
+  }
+}
+
+// Get counselling participants with their salvation status and comments
+export async function getCounsellingParticipants(counsellingId: string): Promise<CounsellingParticipant[]> {
+  try {
+    const result = await client.fetch(
+      `*[_type == "counselling" && _id == $counsellingId][0]{
+        "participants": counsellingParticipants[]{
+          _id,
+          "participant": participant->{
+            _id,
+            name,
+            contact,
+            department,
+            fellowshipName,
+            gender,
+            present
+          },
+          status,
+          comments
+        }
+      }`,
+      { counsellingId }
+    );
+
+    return result?.participants || [];
+  } catch (error) {
+    console.error("Error fetching counselling participants:", error);
+    return [];
   }
 }
 

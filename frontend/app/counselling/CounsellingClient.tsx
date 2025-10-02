@@ -32,6 +32,7 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  CircularProgress,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -42,8 +43,11 @@ import {
   Group as GroupIcon,
   Schedule as ScheduleIcon,
   LocationOn as LocationIcon,
+  CheckCircle as DoneIcon,
+  RadioButtonUnchecked as PendingIcon,
+  Save as SaveIcon,
 } from "@mui/icons-material";
-import { Counselling, Participant } from "../../types";
+import { Counselling, Participant, CounsellingParticipant } from "../../types";
 import {
   createCounselling,
   updateCounselling,
@@ -51,6 +55,8 @@ import {
   getAvailableCounsellors,
   getAvailableCounsellingParticipants,
   getAssignedCounsellingMembers,
+  updateCounsellingParticipant,
+  getCounsellingParticipants,
 } from "../../lib/data-fetching";
 
 interface CounsellingClientProps {
@@ -68,6 +74,174 @@ const statusLabels = {
   inactive: "Inactive",
   completed: "Completed",
 };
+
+// Component for managing individual participant status
+interface ParticipantStatusCardProps {
+  counsellingId: string;
+  counsellingParticipant: CounsellingParticipant;
+  onUpdate: () => void;
+}
+
+function ParticipantStatusCard({ counsellingId, counsellingParticipant, onUpdate }: ParticipantStatusCardProps) {
+  const [status, setStatus] = useState(counsellingParticipant.status);
+  const [comments, setComments] = useState(counsellingParticipant.comments);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // Auto-save status when toggled
+  const handleToggleStatus = async () => {
+    const newStatus = status === "done" ? "pending" : "done";
+    setStatus(newStatus);
+    setIsUpdating(true);
+
+    try {
+      await updateCounsellingParticipant(
+        counsellingId,
+        counsellingParticipant.participant._id,
+        { status: newStatus }
+      );
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
+      onUpdate(); // Update parent to reflect changes
+    } catch (error) {
+      console.error("Error updating status:", error);
+      // Revert on error
+      setStatus(status === "done" ? "pending" : "done");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Auto-save comments when focus is lost (debounced)
+  const handleCommentsBlur = async () => {
+    if (comments === counsellingParticipant.comments) return; // No change
+
+    setIsUpdating(true);
+    try {
+      await updateCounsellingParticipant(
+        counsellingId,
+        counsellingParticipant.participant._id,
+        { comments }
+      );
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
+      onUpdate(); // Update parent to reflect changes
+    } catch (error) {
+      console.error("Error updating comments:", error);
+      // Revert on error
+      setComments(counsellingParticipant.comments);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  return (
+    <Box
+      sx={{
+        mb: 2,
+        p: 2,
+        border: 1,
+        borderColor: status === "done" ? "success.light" : "warning.light",
+        borderRadius: 2,
+        backgroundColor: status === "done" ? "success.50" : "warning.50",
+        transition: "all 0.3s ease",
+        position: "relative"
+      }}
+    >
+      {/* Success indicator */}
+      {showSuccess && (
+        <Box
+          sx={{
+            position: "absolute",
+            top: 8,
+            right: 8,
+            color: "success.main",
+            display: "flex",
+            alignItems: "center",
+            gap: 0.5
+          }}
+        >
+          <SaveIcon fontSize="small" />
+          <Typography variant="caption">Saved</Typography>
+        </Box>
+      )}
+
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+        <Box>
+          <Typography variant="subtitle1" fontWeight="bold">
+            {counsellingParticipant.participant.name}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {counsellingParticipant.participant.fellowshipName}
+          </Typography>
+        </Box>
+
+        {/* Clickable status toggle */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            cursor: "pointer",
+            padding: 1,
+            borderRadius: 1,
+            "&:hover": { backgroundColor: "action.hover" },
+            transition: "background-color 0.2s"
+          }}
+          onClick={handleToggleStatus}
+        >
+          {isUpdating ? (
+            <CircularProgress size={20} />
+          ) : (
+            <IconButton
+              size="small"
+              color={status === "done" ? "success" : "warning"}
+              sx={{ pointerEvents: "none" }} // Prevent double clicks
+            >
+              {status === "done" ? <DoneIcon /> : <PendingIcon />}
+            </IconButton>
+          )}
+          <Typography
+            variant="body2"
+            color={status === "done" ? "success.main" : "warning.main"}
+            fontWeight={status === "done" ? "bold" : "normal"}
+          >
+            {status === "done" ? "Done" : "Pending"}
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* Inline editable comments */}
+      <TextField
+        fullWidth
+        multiline
+        rows={2}
+        label="Comments (click to edit)"
+        value={comments}
+        onChange={(e) => setComments(e.target.value)}
+        onBlur={handleCommentsBlur}
+        placeholder="Click here to add comments about this participant..."
+        variant="outlined"
+        sx={{
+          "& .MuiOutlinedInput-root": {
+            "&:hover fieldset": {
+              borderColor: "primary.main",
+            },
+          },
+        }}
+      />
+
+      {isUpdating && (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
+          <CircularProgress size={16} />
+          <Typography variant="caption" color="text.secondary">
+            Saving...
+          </Typography>
+        </Box>
+      )}
+    </Box>
+  );
+}
 
 export default function CounsellingClient({ counsellings: initialCounsellings }: CounsellingClientProps) {
   const [counsellings, setCounsellings] = useState<Counselling[]>(initialCounsellings);
@@ -87,13 +261,14 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
     message: string;
     severity: "success" | "error";
   }>({ open: false, message: "", severity: "success" });
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   // Form state
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     counsellor: null as Participant | null,
-    participants: [] as Participant[],
+    participants: [] as Participant[], // Keep as Participant[] for form, convert when saving
     meetingSchedule: "",
     location: "",
     status: "active" as "active" | "inactive" | "completed",
@@ -197,7 +372,11 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
         name: formData.name,
         description: formData.description,
         counsellor: formData.counsellor._id,
-        participants: formData.participants.map(p => p._id),
+        participants: formData.participants.map(p => ({
+          participantId: p._id,
+          status: "pending" as const,
+          comments: ""
+        })),
         meetingSchedule: formData.meetingSchedule,
         location: formData.location,
         status: formData.status,
@@ -259,7 +438,11 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
         name: formData.name,
         description: formData.description,
         counsellor: formData.counsellor,
-        participants: formData.participants,
+        participants: formData.participants.map(p => ({
+          participant: p,
+          status: "pending" as const,
+          comments: ""
+        })) as any, // Temporary type assertion for backward compatibility
         meetingSchedule: formData.meetingSchedule,
         location: formData.location,
         status: formData.status,
@@ -334,7 +517,7 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
       name: counselling.name,
       description: counselling.description || "",
       counsellor: counselling.counsellor,
-      participants: counselling.participants || [],
+      participants: counselling.participants?.map(cp => cp.participant) || [],
       meetingSchedule: counselling.meetingSchedule || "",
       location: counselling.location || "",
       status: counselling.status,
@@ -346,6 +529,28 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
   const openDeleteCounsellingDialog = (counselling: Counselling) => {
     setSelectedCounselling(counselling);
     setOpenDeleteDialog(true);
+  };
+
+  const toggleCardExpanded = (counsellingId: string) => {
+    setExpandedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(counsellingId)) {
+        newSet.delete(counsellingId);
+      } else {
+        newSet.add(counsellingId);
+      }
+      return newSet;
+    });
+  };
+
+  const refreshCounsellingData = async () => {
+    try {
+      const { getAllCounsellings } = await import("../../lib/data-fetching");
+      const freshCounsellings = await getAllCounsellings();
+      setCounsellings(freshCounsellings);
+    } catch (error) {
+      console.error("Error refreshing counselling data:", error);
+    }
   };
 
   return (
@@ -392,32 +597,74 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
       ) : (
         <Grid container spacing={3}>
           {counsellings.map((counselling) => (
-            <Grid item xs={12} md={6} lg={4} key={counselling._id}>
-              <Card sx={{ height: "100%" }}>
-                <CardContent>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="h6" component="h2" gutterBottom>
+            <Grid item xs={12} key={counselling._id}>
+              <Accordion
+                expanded={expandedCards.has(counselling._id)}
+                onChange={() => toggleCardExpanded(counselling._id)}
+                sx={{
+                  boxShadow: 2,
+                  '&:before': { display: 'none' },
+                  borderRadius: 2,
+                  mb: 1
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{
+                    cursor: 'pointer',
+                    '& .MuiAccordionSummary-content': {
+                      alignItems: 'center'
+                    }
+                  }}
+                >
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
+                      <Typography variant="h6" component="h2">
                         {counselling.name}
                       </Typography>
                       <Chip
                         label={statusLabels[counselling.status]}
                         color={statusColors[counselling.status]}
                         size="small"
-                        sx={{ mb: 1 }}
                       />
+                      <Chip
+                        label={`${counselling.counsellor.name} (Counsellor)`}
+                        color="primary"
+                        variant="outlined"
+                        size="small"
+                      />
+                      <Chip
+                        label={`${counselling.participants?.length || 0} participants`}
+                        color="secondary"
+                        variant="outlined"
+                        size="small"
+                      />
+                      {/* Progress indicator */}
+                      {counselling.participants && counselling.participants.length > 0 && (
+                        <Chip
+                          label={`${counselling.participants.filter(p => p.status === "done").length}/${counselling.participants.length} done`}
+                          color={counselling.participants.filter(p => p.status === "done").length === counselling.participants.length ? "success" : "warning"}
+                          size="small"
+                        />
+                      )}
                     </Box>
-                    <Box>
+                    <Box sx={{ display: "flex", gap: 1 }} onClick={(e) => e.stopPropagation()}>
                       <IconButton
                         size="small"
-                        onClick={() => openEditCounsellingDialog(counselling)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditCounsellingDialog(counselling);
+                        }}
                         title="Edit Team"
                       >
                         <EditIcon />
                       </IconButton>
                       <IconButton
                         size="small"
-                        onClick={() => openDeleteCounsellingDialog(counselling)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDeleteCounsellingDialog(counselling);
+                        }}
                         title="Delete Team"
                         color="error"
                       >
@@ -425,106 +672,73 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
                       </IconButton>
                     </Box>
                   </Box>
+                </AccordionSummary>
 
-                  {counselling.description && (
-                    <Typography color="text.secondary" sx={{ mb: 2 }}>
-                      {counselling.description}
-                    </Typography>
-                  )}
+                <AccordionDetails>
+                  <Box>
+                    {counselling.description && (
+                      <Typography color="text.secondary" sx={{ mb: 3 }}>
+                        {counselling.description}
+                      </Typography>
+                    )}
 
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="subtitle2" color="primary" gutterBottom>
-                      <PersonCheckIcon sx={{ fontSize: 16, mr: 1, verticalAlign: "middle" }} />
-                      Counsellor
-                    </Typography>
-                    <Chip
-                      label={`${counselling.counsellor.name} (${counselling.counsellor.fellowshipName})`}
-                      color="primary"
-                      variant="outlined"
-                      size="small"
-                    />
-                  </Box>
-
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="subtitle2" color="secondary" gutterBottom>
-                      <GroupIcon sx={{ fontSize: 16, mr: 1, verticalAlign: "middle" }} />
-                      Participants ({counselling.participants?.length || 0})
-                    </Typography>
-                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                      {counselling.participants?.slice(0, 3).map((participant) => (
-                        <Chip
-                          key={participant._id}
-                          label={participant.name}
-                          size="small"
-                          sx={{ fontSize: "0.7rem" }}
-                        />
-                      ))}
-                      {counselling.participants && counselling.participants.length > 3 && (
-                        <Chip
-                          label={`+${counselling.participants.length - 3} more`}
-                          size="small"
-                          color="secondary"
-                          variant="outlined"
-                          sx={{ fontSize: "0.7rem" }}
-                        />
-                      )}
-                    </Box>
-                  </Box>
-
-                  {(counselling.meetingSchedule || counselling.location) && (
-                    <Box sx={{ mb: 2 }}>
-                      {counselling.meetingSchedule && (
-                        <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
-                          <ScheduleIcon sx={{ fontSize: 14, mr: 1 }} />
-                          {counselling.meetingSchedule}
-                        </Typography>
-                      )}
-                      {counselling.location && (
-                        <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center" }}>
-                          <LocationIcon sx={{ fontSize: 14, mr: 1 }} />
-                          {counselling.location}
-                        </Typography>
-                      )}
-                    </Box>
-                  )}
-
-                  <Accordion>
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                      <Typography variant="subtitle2">View All Members</Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="subtitle2" color="primary" gutterBottom>
-                          Counsellor
-                        </Typography>
-                        <Typography variant="body2">
-                          {counselling.counsellor.name} ({counselling.counsellor.fellowshipName})
-                        </Typography>
-                      </Box>
-
-                      <Box>
-                        <Typography variant="subtitle2" color="secondary" gutterBottom>
-                          Participants
-                        </Typography>
-                        {counselling.participants && counselling.participants.length > 0 ? (
-                          counselling.participants.map((participant) => (
-                            <Chip
-                              key={participant._id}
-                              label={`${participant.name} (${participant.fellowshipName})`}
-                              size="small"
-                              sx={{ mr: 1, mb: 1 }}
-                            />
-                          ))
-                        ) : (
-                          <Typography color="text.secondary" variant="body2">
-                            No participants assigned yet.
+                    {(counselling.meetingSchedule || counselling.location) && (
+                      <Box sx={{ mb: 3, p: 2, backgroundColor: "grey.50", borderRadius: 1 }}>
+                        {counselling.meetingSchedule && (
+                          <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
+                            <ScheduleIcon sx={{ fontSize: 16, mr: 1 }} />
+                            {counselling.meetingSchedule}
+                          </Typography>
+                        )}
+                        {counselling.location && (
+                          <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center" }}>
+                            <LocationIcon sx={{ fontSize: 16, mr: 1 }} />
+                            {counselling.location}
                           </Typography>
                         )}
                       </Box>
-                    </AccordionDetails>
-                  </Accordion>
-                </CardContent>
-              </Card>
+                    )}
+
+                    {/* Participant Management */}
+                    <Box>
+                      <Typography variant="h6" color="secondary" gutterBottom sx={{ mb: 2 }}>
+                        <GroupIcon sx={{ fontSize: 20, mr: 1, verticalAlign: "middle" }} />
+                        Participant Progress ({counselling.participants?.length || 0})
+                      </Typography>
+                      {counselling.participants && counselling.participants.length > 0 ? (
+                        <Box>
+                          {counselling.participants.map((counsellingParticipant) => (
+                            <ParticipantStatusCard
+                              key={counsellingParticipant.participant._id}
+                              counsellingId={counselling._id}
+                              counsellingParticipant={counsellingParticipant}
+                              onUpdate={refreshCounsellingData}
+                            />
+                          ))}
+                        </Box>
+                      ) : (
+                        <Box sx={{ textAlign: "center", py: 4, color: "text.secondary" }}>
+                          <GroupIcon sx={{ fontSize: 48, mb: 1 }} />
+                          <Typography variant="body2">
+                            No participants assigned yet.
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+
+                    {counselling.notes && (
+                      <Box sx={{ mt: 3, p: 2, backgroundColor: "info.50", borderRadius: 1 }}>
+                        <Typography variant="subtitle2" color="info.main" gutterBottom>
+                          Notes
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {counselling.notes}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                </AccordionDetails>
+              </Accordion>
             </Grid>
           ))}
         </Grid>
