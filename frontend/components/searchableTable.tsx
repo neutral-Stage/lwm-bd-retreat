@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
+  Box,
   Paper,
   Table,
   TableBody,
@@ -14,11 +15,11 @@ import {
   TextField,
   InputAdornment,
   IconButton,
-} from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import ClearIcon from '@mui/icons-material/Clear';
-import * as XLSX from 'xlsx';
-import { Participant } from '../types';
+} from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
+import * as XLSX from "xlsx";
+import { Participant } from "../types";
 
 interface SearchableTableProps {
   data: Participant[];
@@ -26,23 +27,25 @@ interface SearchableTableProps {
 }
 
 interface ExcelData {
-  'Registration No.': string;
+  "Registration No.": string;
   Name: string;
-  Phone: string;
-  'Male/Female': string;
+  "Male/Female": string;
+  Age: string;
+  Area: string;
   Department: string;
   Present: string;
   RoomNo: string;
-  'Guardian Name': string;
-  'Guardian Contact': string;
 }
 
 const zeroPad = (num: number, places: number): string => {
-  return String(num).padStart(places, '0');
+  return String(num).padStart(places, "0");
 };
 
-export const SearchableTable: React.FC<SearchableTableProps> = ({ data = [], fellowship }) => {
-  const [searchTerm, setSearchTerm] = useState<string>('');
+export const SearchableTable: React.FC<SearchableTableProps> = ({
+  data = [],
+  fellowship,
+}) => {
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const [filteredData, setFilteredData] = useState<Participant[]>(data || []);
 
   React.useEffect(() => {
@@ -53,7 +56,7 @@ export const SearchableTable: React.FC<SearchableTableProps> = ({ data = [], fel
     const value = event.target.value;
     setSearchTerm(value);
     const safeData = data || [];
-    if (value === '') {
+    if (value === "") {
       setFilteredData(safeData);
     } else {
       const filtered = safeData.filter((participant) =>
@@ -66,7 +69,7 @@ export const SearchableTable: React.FC<SearchableTableProps> = ({ data = [], fel
   };
 
   const cancelSearch = (): void => {
-    setSearchTerm('');
+    setSearchTerm("");
     setFilteredData(data || []);
   };
 
@@ -75,42 +78,39 @@ export const SearchableTable: React.FC<SearchableTableProps> = ({ data = [], fel
       const felName = fellowship.slice(0, 3).toUpperCase();
       const serial = index + 1;
       const serialNo = zeroPad(serial, 3);
-      const regNo = felName + '-' + serialNo;
-      
+      const regNo = felName + "-" + serialNo;
+
       return {
-        'Registration No.': regNo,
+        "Registration No.": regNo,
         Name: p.name,
-        Phone: p.contact || p.phone || '',
-        'Male/Female': p.gender,
-        Department: p.department || '',
-        Present: p.present || 'No',
-        RoomNo: typeof p.roomNo === 'object' ? p.roomNo?.roomNo || '' : p.roomNo || '',
-        'Guardian Name': p.guardianName || '',
-        'Guardian Contact': p.guardianContact || '',
+        "Male/Female": p.gender,
+        Age: p.age?.toString() || "",
+        Area: p.area || "",
+        Department: p.department || "",
+        Present: p.present || "No",
+        RoomNo:
+          typeof p.roomNo === "object"
+            ? p.roomNo?.roomNo || ""
+            : p.roomNo || "",
       };
     });
-    
+
     const workSheet = XLSX.utils.json_to_sheet(newData);
     const workBook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workBook, workSheet, 'participants');
+    XLSX.utils.book_append_sheet(workBook, workSheet, "participants");
     XLSX.writeFile(workBook, `${fellowship}.xlsx`);
   };
 
-
-
   return (
-    <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-      <Typography variant="h3" sx={{ marginY: '1rem', textAlign: 'center' }}>
-        {fellowship}
-      </Typography>
-      
+    <Box sx={{ width: "100%" }}>
+
       <div
         style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '1rem',
-          gap: '1rem',
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "1rem",
+          gap: "1rem",
         }}
       >
         <TextField
@@ -119,7 +119,7 @@ export const SearchableTable: React.FC<SearchableTableProps> = ({ data = [], fel
           value={searchTerm}
           onChange={handleSearchChange}
           size="small"
-          sx={{ flexGrow: 1, maxWidth: '400px' }}
+          sx={{ flexGrow: 1, maxWidth: "400px" }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -140,24 +140,29 @@ export const SearchableTable: React.FC<SearchableTableProps> = ({ data = [], fel
             ),
           }}
         />
-        
+
         <Button variant="outlined" onClick={downloadExcel} color="primary">
           Export to Excel
         </Button>
       </div>
 
-      <TableContainer sx={{ maxHeight: '70vh' }}>
+      <TableContainer sx={{
+        maxHeight: "calc(100vh - 300px)",
+        minHeight: "400px",
+        overflow: "auto",
+        border: "1px solid #e0e0e0",
+        borderRadius: "4px"
+      }}>
         <Table stickyHeader aria-label="participant table">
           <TableHead>
             <TableRow>
               <TableCell>Registration No.</TableCell>
               <TableCell>Name</TableCell>
-              <TableCell align="right">Phone</TableCell>
               <TableCell align="right">Gender</TableCell>
+              <TableCell align="right">Age</TableCell>
+              <TableCell align="right">Area</TableCell>
               <TableCell align="right">Department</TableCell>
               <TableCell align="right">Present</TableCell>
-              <TableCell align="right">Guardian Name</TableCell>
-              <TableCell align="right">Guardian Contact</TableCell>
               <TableCell align="right">Room No.</TableCell>
             </TableRow>
           </TableHead>
@@ -166,45 +171,29 @@ export const SearchableTable: React.FC<SearchableTableProps> = ({ data = [], fel
               const felName = fellowship.slice(0, 3).toUpperCase();
               const serial = index + 1;
               const serialNo = zeroPad(serial, 3);
-              const regNo = felName + '-' + serialNo;
-              
+              const regNo = felName + "-" + serialNo;
+
               return (
                 <TableRow key={row._id} hover>
                   <TableCell>{regNo}</TableCell>
                   <TableCell>{row.name}</TableCell>
-                  <TableCell align="right">{row.contact || row.phone || '-'}</TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ textTransform: 'capitalize' }}
-                  >
+                  <TableCell align="right" sx={{ textTransform: "capitalize" }}>
                     {row.gender}
                   </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ textTransform: 'capitalize' }}
-                  >
-                    {row.department || '-'}
+                  <TableCell align="right">{row.age || "-"}</TableCell>
+                  <TableCell align="right" sx={{ textTransform: "capitalize" }}>
+                    {row.area || "-"}
                   </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ textTransform: 'capitalize' }}
-                  >
-                    {row.present || 'No'}
+                  <TableCell align="right" sx={{ textTransform: "capitalize" }}>
+                    {row.department || "-"}
                   </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ textTransform: 'capitalize' }}
-                  >
-                    {row.guardianName || '-'}
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ textTransform: 'capitalize' }}
-                  >
-                    {row.guardianContact || '-'}
+                  <TableCell align="right" sx={{ textTransform: "capitalize" }}>
+                    {row.present || "No"}
                   </TableCell>
                   <TableCell align="center">
-                    {typeof row.roomNo === 'object' ? row.roomNo?.roomNo || '-' : row.roomNo || '-'}
+                    {typeof row.roomNo === "object"
+                      ? row.roomNo?.roomNo || "-"
+                      : row.roomNo || "-"}
                   </TableCell>
                 </TableRow>
               );
@@ -212,20 +201,20 @@ export const SearchableTable: React.FC<SearchableTableProps> = ({ data = [], fel
           </TableBody>
         </Table>
       </TableContainer>
-      
+
       {filteredData.length === 0 && (
-        <Typography 
-          variant="body1" 
-          sx={{ 
-            textAlign: 'center', 
-            padding: '2rem',
-            color: 'text.secondary'
+        <Typography
+          variant="body1"
+          sx={{
+            textAlign: "center",
+            padding: "2rem",
+            color: "text.secondary",
           }}
         >
           No participants found.
         </Typography>
       )}
-    </Paper>
+    </Box>
   );
 };
 

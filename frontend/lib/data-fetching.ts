@@ -1,5 +1,11 @@
 import { client } from "../service/sanityClient";
-import { Participant, Room, Fellowship, Group, Counselling } from "../types/index";
+import {
+  Participant,
+  Room,
+  Fellowship,
+  Group,
+  Counselling,
+} from "../types/index";
 
 // Cache configuration
 const REVALIDATE_TIME = 3600; // 1 hour in seconds
@@ -403,6 +409,8 @@ export async function getFellowshipParticipantsBySlug(
         isSaved,
         salvationDate,
         birthYear,
+        age,
+        area,
         "roomNo": roomNo->roomNo,
         _createdAt
       } | order(_createdAt desc)`,
@@ -415,6 +423,50 @@ export async function getFellowshipParticipantsBySlug(
     return Array.isArray(participants) ? participants : [];
   } catch (error) {
     console.error("Error fetching fellowship participants by slug:", error);
+    return [];
+  }
+}
+
+export async function getAllFellowshipParticipantsBySlug(
+  slug: string
+): Promise<Participant[]> {
+  try {
+    // First get the fellowship name from the slug
+    const fellowship = await getFellowshipBySlug(slug);
+    if (!fellowship) {
+      return [];
+    }
+
+    // Then fetch ALL participants using the fellowship name (present and absent)
+    const participants = await client.fetch(
+      `*[_type == "participant" && fellowshipName == $fellowshipName]{
+        _id,
+        regNo,
+        name,
+        contact,
+        guardianName,
+        guardianContact,
+        gender,
+        department,
+        fellowshipName,
+        present,
+        isSaved,
+        salvationDate,
+        birthYear,
+        age,
+        area,
+        "roomNo": roomNo->roomNo,
+        _createdAt
+      } | order(_createdAt desc)`,
+      { fellowshipName: fellowship.fellowship },
+      {
+        next: { revalidate: REVALIDATE_TIME },
+      }
+    );
+
+    return Array.isArray(participants) ? participants : [];
+  } catch (error) {
+    console.error("Error fetching all fellowship participants by slug:", error);
     return [];
   }
 }
@@ -525,22 +577,24 @@ export async function createGroup(groupData: {
   volunteers?: string[];
 }): Promise<Group> {
   try {
-    const participantRefs = groupData.participants?.map(id => ({
-      _ref: id,
-      _type: "reference"
-    })) || [];
+    const participantRefs =
+      groupData.participants?.map((id) => ({
+        _ref: id,
+        _type: "reference",
+      })) || [];
 
-    const volunteerRefs = groupData.volunteers?.map(id => ({
-      _ref: id,
-      _type: "reference"
-    })) || [];
+    const volunteerRefs =
+      groupData.volunteers?.map((id) => ({
+        _ref: id,
+        _type: "reference",
+      })) || [];
 
     const result = await client.create({
       _type: "group",
       name: groupData.name,
       slug: {
         _type: "slug",
-        current: groupData.name.toLowerCase().replace(/\s+/g, "-")
+        current: groupData.name.toLowerCase().replace(/\s+/g, "-"),
       },
       description: groupData.description || "",
       participants: participantRefs,
@@ -569,14 +623,14 @@ export async function updateGroup(
 
     // Handle participants and volunteers references
     if (updates.participants) {
-      updateData.participants = updates.participants.map(p =>
-        typeof p === 'string' ? { _ref: p, _type: "reference" } : p
+      updateData.participants = updates.participants.map((p) =>
+        typeof p === "string" ? { _ref: p, _type: "reference" } : p
       );
     }
 
     if (updates.volunteers) {
-      updateData.volunteers = updates.volunteers.map(v =>
-        typeof v === 'string' ? { _ref: v, _type: "reference" } : v
+      updateData.volunteers = updates.volunteers.map((v) =>
+        typeof v === "string" ? { _ref: v, _type: "reference" } : v
       );
     }
 
@@ -713,7 +767,9 @@ export async function getAllCounsellings(): Promise<Counselling[]> {
   }
 }
 
-export async function getCounsellingById(id: string): Promise<Counselling | null> {
+export async function getCounsellingById(
+  id: string
+): Promise<Counselling | null> {
   try {
     const counselling = await client.fetch(
       `*[_type == "counselling" && _id == $id][0] {
@@ -773,12 +829,12 @@ export async function createCounselling(counsellingData: {
   try {
     const counsellorRef = {
       _ref: counsellingData.counsellor,
-      _type: "reference"
+      _type: "reference",
     };
 
-    const participantRefs = counsellingData.participants.map(id => ({
+    const participantRefs = counsellingData.participants.map((id) => ({
       _ref: id,
-      _type: "reference"
+      _type: "reference",
     }));
 
     const result = await client.create({
@@ -786,7 +842,7 @@ export async function createCounselling(counsellingData: {
       name: counsellingData.name,
       slug: {
         _type: "slug",
-        current: counsellingData.name.toLowerCase().replace(/\s+/g, "-")
+        current: counsellingData.name.toLowerCase().replace(/\s+/g, "-"),
       },
       description: counsellingData.description || "",
       counsellor: counsellorRef,
@@ -819,15 +875,16 @@ export async function updateCounselling(
 
     // Handle counsellor reference
     if (updates.counsellor) {
-      updateData.counsellor = typeof updates.counsellor === 'string'
-        ? { _ref: updates.counsellor, _type: "reference" }
-        : updates.counsellor;
+      updateData.counsellor =
+        typeof updates.counsellor === "string"
+          ? { _ref: updates.counsellor, _type: "reference" }
+          : updates.counsellor;
     }
 
     // Handle participants references
     if (updates.participants) {
-      updateData.participants = updates.participants.map(p =>
-        typeof p === 'string' ? { _ref: p, _type: "reference" } : p
+      updateData.participants = updates.participants.map((p) =>
+        typeof p === "string" ? { _ref: p, _type: "reference" } : p
       );
     }
 
@@ -891,7 +948,9 @@ export async function getAvailableCounsellors(): Promise<Participant[]> {
 }
 
 // Get participants available for counselling (not already assigned to counselling teams)
-export async function getAvailableCounsellingParticipants(): Promise<Participant[]> {
+export async function getAvailableCounsellingParticipants(): Promise<
+  Participant[]
+> {
   try {
     const participants = await client.fetch(
       `*[_type == "participant" && department != "volunteer" && present == "present"]{
