@@ -31,7 +31,7 @@ export interface Participant {
 
 export interface Room {
   _id: string;
-  _type: "room";
+  _type: "roomNo";
   _createdAt: string;
   _updatedAt: string;
   roomNo: string;

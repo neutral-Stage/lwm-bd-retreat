@@ -18,8 +18,13 @@ import {
   CircularProgress,
   Grid,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
-import { createRoom, updateRoom, deleteRoom } from '../../lib/data-fetching';
+import { createRoom, updateRoom, deleteRoom, getAllRooms } from '../../lib/data-fetching';
 import { Room, useAppContext, actions } from '../../contexts/AppContext';
 
 interface EditRoomClientProps {
@@ -28,7 +33,7 @@ interface EditRoomClientProps {
 
 const EditRoomClient: React.FC<EditRoomClientProps> = ({ initialRooms }) => {
   const { state, dispatch } = useAppContext();
-  
+
   // Use context state or fallback to initial data
   const rooms = state.rooms.length > 0 ? state.rooms : initialRooms;
   const [formValues, setFormValues] = useState({
@@ -38,6 +43,23 @@ const EditRoomClient: React.FC<EditRoomClientProps> = ({ initialRooms }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
+
+  // Function to refresh room list from server
+  const refreshRoomList = async () => {
+    try {
+      const freshRooms = await getAllRooms();
+      dispatch(actions.setRooms(freshRooms));
+    } catch (error) {
+      console.error('Failed to refresh room list:', error);
+    }
+  };
+
+  // Refresh room list on component mount to ensure fresh data
+  useEffect(() => {
+    refreshRoomList();
+  }, []);
 
   // Calculate totals
   const totalCapacity = rooms.reduce((sum, room) => sum + room.capacity, 0);
@@ -79,9 +101,9 @@ const EditRoomClient: React.FC<EditRoomClientProps> = ({ initialRooms }) => {
       }
 
       const newRoom = await createRoom({ roomNo, capacity });
-      dispatch(actions.addRoom({ ...newRoom, booked: 0 }));
       setFormValues({ roomNo: '', capacity: '' });
       setSuccess('Room created successfully!');
+      await refreshRoomList(); // Refresh to get latest data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create room');
     } finally {
@@ -97,6 +119,7 @@ const EditRoomClient: React.FC<EditRoomClientProps> = ({ initialRooms }) => {
     try {
       await updateRoom(roomId, { capacity });
       setSuccess('Room updated successfully!');
+      await refreshRoomList(); // Refresh to get latest data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update room');
       // Revert the change
@@ -109,24 +132,35 @@ const EditRoomClient: React.FC<EditRoomClientProps> = ({ initialRooms }) => {
     }
   };
 
-  const handleDeleteRoom = async (roomId: string) => {
-    if (!window.confirm('Are you sure you want to delete this room?')) {
-      return;
-    }
+  const handleDeleteClick = (room: Room) => {
+    setRoomToDelete(room);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!roomToDelete) return;
 
     setLoading(true);
     setError(null);
     setSuccess(null);
+    setDeleteDialogOpen(false);
 
     try {
-      await deleteRoom(roomId);
-      dispatch(actions.deleteRoom(roomId));
-      setSuccess('Room deleted successfully!');
+      await deleteRoom(roomToDelete._id);
+      setSuccess(`Room ${roomToDelete.roomNo} deleted successfully!`);
+      setRoomToDelete(null);
+      await refreshRoomList(); // Refresh to get latest data
     } catch (err) {
+      console.error('Delete room error:', err);
       setError(err instanceof Error ? err.message : 'Failed to delete room');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setRoomToDelete(null);
   };
 
   return (
@@ -257,7 +291,7 @@ const EditRoomClient: React.FC<EditRoomClientProps> = ({ initialRooms }) => {
                         variant="contained"
                         color="error"
                         size="small"
-                        onClick={() => handleDeleteRoom(room._id)}
+                        onClick={() => handleDeleteClick(room)}
                         disabled={loading}
                       >
                         Delete
@@ -278,6 +312,40 @@ const EditRoomClient: React.FC<EditRoomClientProps> = ({ initialRooms }) => {
             </TableBody>
           </Table>
         </TableContainer>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={handleDeleteCancel}
+          aria-labelledby="delete-dialog-title"
+          aria-describedby="delete-dialog-description"
+        >
+          <DialogTitle id="delete-dialog-title">
+            Confirm Room Deletion
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText id="delete-dialog-description">
+              Are you sure you want to delete Room {roomToDelete?.roomNo}?
+              {roomToDelete && roomToDelete.booked > 0 && (
+                <>
+                  <br />
+                  <strong>Warning:</strong> This room has {roomToDelete.booked} participant(s) currently assigned.
+                  Deleting this room will unassign these participants.
+                </>
+              )}
+              <br />
+              This action cannot be undone.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleDeleteCancel} color="primary">
+              Cancel
+            </Button>
+            <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+              Delete Room
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </Container>
   );

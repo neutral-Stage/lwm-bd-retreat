@@ -92,16 +92,26 @@ export async function getAllRooms(): Promise<Room[]> {
         _id,
         roomNo,
         capacity,
-        "booked": count(*[_type == "participant" && roomNo._ref == ^._id])
+        "booked": count(*[_type == "participant" && roomNo._ref == ^._id]),
+        _createdAt,
+        _updatedAt
       } | order(roomNo asc)`,
       {},
       {
-        next: { revalidate: REVALIDATE_TIME },
+        cache: "no-store", // Force fresh data for room management
       }
     );
 
-    // Ensure we always return an array
-    return Array.isArray(rooms) ? rooms : [];
+    // Ensure we always return an array and transform to match Room interface
+    const transformedRooms = Array.isArray(rooms)
+      ? rooms.map((room) => ({
+          ...room,
+          occupied: room.booked || 0,
+          available: room.capacity - (room.booked || 0),
+        }))
+      : [];
+
+    return transformedRooms;
   } catch (error) {
     console.error("Error fetching rooms:", error);
     // Return empty array instead of throwing during build time
@@ -116,18 +126,24 @@ export async function createRoom(roomData: {
 }): Promise<Room> {
   try {
     const result = await client.create({
-      _type: "room",
+      _type: "roomNo",
       roomNo: roomData.roomNo.toString(),
       capacity: roomData.capacity,
-      occupied: 0,
-      available: roomData.capacity,
     });
 
-    if (!isValidRoom(result)) {
+    // Transform to match Room interface with computed fields
+    const roomWithComputed = {
+      ...result,
+      occupied: 0,
+      available: roomData.capacity,
+      booked: 0,
+    };
+
+    if (!isValidRoom(roomWithComputed)) {
       throw new Error("Invalid room data returned from server");
     }
 
-    return result;
+    return roomWithComputed;
   } catch (error) {
     console.error("Error creating room:", error);
     throw new Error("Failed to create room");
@@ -139,13 +155,41 @@ export async function updateRoom(
   updates: Partial<Room>
 ): Promise<Room> {
   try {
-    const result = await client.patch(id).set(updates).commit();
+    // Only update fields that exist in Sanity schema
+    const sanitizedUpdates: any = {};
 
-    if (!isValidRoom(result)) {
+    if (updates.roomNo) {
+      sanitizedUpdates.roomNo = updates.roomNo;
+    }
+    if (updates.capacity !== undefined) {
+      sanitizedUpdates.capacity = updates.capacity;
+    }
+
+    console.log(
+      "Updating room:",
+      id,
+      "with sanitized updates:",
+      sanitizedUpdates
+    );
+
+    const result = await client.patch(id).set(sanitizedUpdates).commit();
+
+    console.log("Room update result:", result);
+
+    // Transform result to match Room interface with computed fields
+    const roomWithComputed = {
+      ...result,
+      occupied: result.occupied || 0,
+      available:
+        updates.capacity !== undefined ? updates.capacity : result.capacity,
+      booked: result.booked || 0,
+    };
+
+    if (!isValidRoom(roomWithComputed)) {
       throw new Error("Invalid room data returned from server");
     }
 
-    return result;
+    return roomWithComputed;
   } catch (error) {
     console.error("Error updating room:", error);
     throw new Error("Failed to update room");
@@ -154,10 +198,17 @@ export async function updateRoom(
 
 export async function deleteRoom(id: string): Promise<void> {
   try {
+    // First check if the room exists
+    const roomExists = await client.fetch(`*[_type == "roomNo" && _id == $id][0]`, { id });
+
+    if (!roomExists) {
+      throw new Error("Room not found");
+    }
+
     await client.delete(id);
   } catch (error) {
     console.error("Error deleting room:", error);
-    throw new Error("Failed to delete room");
+    throw new Error(error instanceof Error ? error.message : "Failed to delete room");
   }
 }
 
