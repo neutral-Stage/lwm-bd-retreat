@@ -1,4 +1,4 @@
-import { Fellowship } from '../types';
+import { FellowshipWithSlug } from '../types';
 
 const fellowships: string[] = [
   'Dhaka Church',
@@ -65,7 +65,7 @@ export function getNameFromSlug(slug: string): string | undefined {
 }
 
 // Get all fellowship objects with name and slug
-export function getFellowshipsWithSlugs(): Fellowship[] {
+export function getFellowshipsWithSlugs(): FellowshipWithSlug[] {
   return dhakaRetreatFellowships.map((name) => ({
     name,
     slug: createSlug(name),

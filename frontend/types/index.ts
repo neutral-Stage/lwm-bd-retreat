@@ -56,6 +56,11 @@ export interface Fellowship {
   division: string;
 }
 
+export interface FellowshipWithSlug {
+  name: string;
+  slug: string;
+}
+
 export interface PageProps {
   params: {
     slug?: string;
