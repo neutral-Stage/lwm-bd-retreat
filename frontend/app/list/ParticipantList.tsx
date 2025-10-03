@@ -65,9 +65,6 @@ export default function ParticipantList({
     severity: "success" as "success" | "error",
   });
 
-  console.log("Total participants:", participantState.length);
-  console.log("Raw participants prop:", participants.length);
-  console.log("Sample participant:", participants[0]);
 
   // Clean the data (remove any remaining Unicode issues)
   const cleanedParticipants = participantState.map((p) => ({
@@ -80,7 +77,6 @@ export default function ParticipantList({
     present: cleanText(p.present || "present") as "present" | "absent",
   }));
 
-  console.log("Cleaned participants:", cleanedParticipants.length);
 
   // Clean text function
   function cleanText(text: string) {

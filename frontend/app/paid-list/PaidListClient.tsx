@@ -39,7 +39,6 @@ const RadioPaid = ({ id, feePaid, onUpdate }: RadioPaidProps) => {
     try {
       await updateParticipant(id, { feePaid: isPaid });
       onUpdate(id, isPaid);
-      console.log('Payment status updated successfully');
     } catch (error) {
       console.error('Failed to update payment status:', error);
       // Revert on error
@@ -136,7 +135,6 @@ export default function PaidListClient({ participants: initialParticipants }: Pa
       });
       setOpen(false);
       setSelected(null);
-      console.log('Participant marked as absent successfully');
     } catch (error) {
       console.error('Failed to update participant status:', error);
     }

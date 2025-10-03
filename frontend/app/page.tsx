@@ -16,7 +16,8 @@ import RadioGroup from '@mui/material/RadioGroup';
 import { MobileDatePicker } from '@mui/x-date-pickers/MobileDatePicker';
 import dayjs from 'dayjs';
 import { v4 as uuidv4 } from 'uuid';
-import { dhakaRetreatFellowships as fellowships } from '../data/fellowship';
+import { getAllFellowships } from '../lib/data-fetching';
+import { Fellowship } from '../types/index';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -46,10 +47,11 @@ interface FormValues {
   guardianContact: string;
   gender: 'male' | 'female';
   fellowshipName: string;
+  area: string;
   department: string;
   isSaved: string;
   salvationDate: string;
-  birthYear: string;
+  age: number;
   image: File | null;
 }
 
@@ -86,38 +88,49 @@ export default function HomePage() {
   const { state, dispatch } = useAppContext();
   const [loading, setLoading] = useState(false);
   const [image, setImage] = useState<File | null>(null);
-  const [birthYear, setBirthYear] = useState<string>('');
+  const [fellowships, setFellowships] = useState<Fellowship[]>([]);
   
   // Extract values from context for easier access
   const {
     formData: {
       name,
       phone,
+      contact,
+      guardianName,
+      guardianContact,
       gender,
       fellowshipName,
+      area,
+      department,
       salvationDate,
       present,
-      age
+      age,
+      isSaved
     },
     selectedDate: date,
-    selectedYear: year,
     isModalOpen
   } = state;
 
-  // Local state for fields not in FormData
-  const [contact, setContact] = useState<string>('');
-  const [guardianName, setGuardianName] = useState<string>('');
-  const [guardianContact, setGuardianContact] = useState<string>('');
-  const [department, setDepartment] = useState<string>('');
-  const [isSaved, setIsSaved] = useState<string>('no');
+  // Only local state needed for image and fellowships
+
+  // Fetch fellowships on component mount
+  useEffect(() => {
+    const fetchFellowships = async () => {
+      try {
+        const fellowshipData = await getAllFellowships();
+        setFellowships(fellowshipData);
+      } catch (error) {
+        console.error('Error fetching fellowships:', error);
+      }
+    };
+
+    fetchFellowships();
+  }, []);
 
   const convertDate = (date: Date): string => {
     return dayjs(date).format('YYYY-MM-DD');
   };
 
-  const convertYear = (date: Date): string => {
-    return dayjs(date).format('YYYY');
-  };
 
   const fileToDataUri = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -137,62 +150,30 @@ export default function HomePage() {
     guardianContact,
     gender,
     fellowshipName,
+    area,
     department,
     isSaved,
     salvationDate,
-    birthYear,
+    age,
     image
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    
-    // Handle FormData fields
-    if (['name', 'phone', 'fellowshipName', 'salvationDate', 'present', 'gender'].includes(name)) {
-      dispatch(actions.setFormData({
-        [name]: value,
-      }));
-    }
-    
-    // Handle local state fields
-    switch (name) {
-      case 'contact':
-        setContact(value);
-        break;
-      case 'guardianName':
-        setGuardianName(value);
-        break;
-      case 'guardianContact':
-        setGuardianContact(value);
-        break;
-      case 'department':
-        setDepartment(value);
-        break;
-      case 'isSaved':
-        setIsSaved(value);
-        break;
-    }
+
+    // All form fields are now handled through context
+    dispatch(actions.setFormData({
+      [name]: name === 'age' ? parseInt(value) || 0 : value,
+    }));
   };
 
   const handleSelectChange = (e: any) => {
     const { name, value } = e.target;
-    
-    // Handle FormData fields
-    if (['fellowshipName', 'gender', 'present'].includes(name)) {
-      dispatch(actions.setFormData({
-        [name]: value,
-      }));
-    }
-    
-    // Handle local state fields
-    switch (name) {
-      case 'department':
-        setDepartment(value);
-        break;
-      case 'isSaved':
-        setIsSaved(value);
-        break;
-    }
+
+    // All select fields are now handled through context
+    dispatch(actions.setFormData({
+      [name]: value,
+    }));
   };
 
   const handleClickOpen = () => {
@@ -211,10 +192,12 @@ export default function HomePage() {
     dispatch(actions.setSelectedDate(newValue));
   };
 
-  const handleYear = (newValue: any) => {
-    const format = convertYear(newValue.toDate());
-    setBirthYear(format);
-    dispatch(actions.setSelectedYear(newValue));
+  const handleAgeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const ageValue = value ? parseInt(value) : 0;
+    dispatch(actions.setFormData({
+      age: ageValue,
+    }));
   };
 
   const onChange = (file: File | null) => {
@@ -253,18 +236,19 @@ export default function HomePage() {
         gender: gender as 'male' | 'female',
         department: department,
         fellowshipName: fellowshipName,
+        area: area,
         present: 'present' as const,
         guestOrSaved: isSaved === 'yes' ? 'saved' as const : 'guest' as const,
         salvationDate: salvationDate,
-        birthYear: parseInt(birthYear) || new Date().getFullYear() - 18
+        age: age || 18
       };
 
       await createParticipant(participantData);
       
       // Reset form after successful submission
       dispatch(actions.resetFormData());
+      setImage(null); // Reset image as it's not in context
       
-      console.log('Participant created successfully!');
     } catch (error) {
       console.error('Error creating participant:', error);
     } finally {
@@ -407,12 +391,23 @@ export default function HomePage() {
                       onChange={handleSelectChange}
                     >
                       {fellowships.map((fellowship) => (
-                        <MenuItem key={fellowship} value={fellowship}>
-                          {fellowship}
+                        <MenuItem key={fellowship._id} value={fellowship.fellowship}>
+                          {fellowship.fellowship}
                         </MenuItem>
                       ))}
                     </Select>
                   </FormControl>
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    id="area"
+                    label="Area/Location"
+                    name="area"
+                    value={area}
+                    onChange={handleInputChange}
+                    autoComplete="off"
+                  />
                 </Grid>
                 <Grid item xs={12}>
                   <FormControl fullWidth>
@@ -434,14 +429,16 @@ export default function HomePage() {
                   </FormControl>
                 </Grid>
                 <Grid item xs={12}>
-                  <MobileDatePicker
-                    label="Birth Year"
-                    name="birthYear"
-                    format="yyyy"
-                    views={['year']}
-                    value={year}
-                    onChange={(newValue) => handleYear(newValue)}
-                    slotProps={{ textField: {} }}
+                  <TextField
+                    fullWidth
+                    id="age"
+                    label="Age"
+                    name="age"
+                    type="number"
+                    inputProps={{ min: 1, max: 120 }}
+                    value={age || ''}
+                    onChange={handleAgeChange}
+                    autoComplete="off"
                   />
                 </Grid>
                 <Grid item xs={12}>

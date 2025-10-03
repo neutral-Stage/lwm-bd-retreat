@@ -173,7 +173,6 @@ export default function NewFormClient() {
 
     try {
       const newParticipant = await createParticipant(participantData);
-      console.log("Participant was created successfully");
 
       // Add the new participant to global context
       if (newParticipant) {
@@ -184,7 +183,7 @@ export default function NewFormClient() {
       if (image) {
         // Note: Image upload functionality would need to be implemented
         // in the data-fetching utility or handled separately
-        console.log("Image upload would be handled here");
+        // TODO: Implement image upload functionality
       }
     } catch (error) {
       console.error("Error creating participant:", error);

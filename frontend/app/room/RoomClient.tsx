@@ -49,7 +49,6 @@ const RoomSelection = ({
 
       try {
         await updateParticipant(participantId, { roomNo: undefined });
-        console.log("Room assignment removed successfully");
       } catch (error) {
         console.error("Failed to remove room assignment:", error);
         // Revert on error
@@ -66,7 +65,6 @@ const RoomSelection = ({
         await updateParticipant(participantId, {
           roomNo: { roomNo: targetRoom?.roomNo || "" },
         });
-        console.log("Room assignment updated successfully");
       } catch (error) {
         console.error("Failed to update room assignment:", error);
         // Revert on error

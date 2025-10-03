@@ -166,16 +166,9 @@ export async function updateRoom(
       sanitizedUpdates.capacity = updates.capacity;
     }
 
-    console.log(
-      "Updating room:",
-      id,
-      "with sanitized updates:",
-      sanitizedUpdates
-    );
 
     const result = await client.patch(id).set(sanitizedUpdates).commit();
 
-    console.log("Room update result:", result);
 
     // Transform result to match Room interface with computed fields
     const roomWithComputed = {
@@ -260,21 +253,9 @@ export async function updateParticipant(
   updates: Partial<Participant>
 ): Promise<Participant> {
   try {
-    console.log("Updating participant:", id, "with updates:", updates);
-
     const result = await client.patch(id).set(updates).commit();
 
-    console.log("Update result:", result);
-
     if (!isValidParticipant(result)) {
-      console.log("Validation failed for participant:", {
-        _id: typeof result._id,
-        name: typeof result.name,
-        contact: typeof result.contact,
-        fellowshipName: typeof result.fellowshipName,
-        present: typeof result.present,
-        gender: typeof result.gender,
-      });
       throw new Error(
         "Invalid participant data returned from server - validation failed"
       );
@@ -302,9 +283,7 @@ export async function updateParticipant(
 
 export async function deleteParticipant(id: string): Promise<void> {
   try {
-    console.log("Deleting participant:", id);
     await client.delete(id);
-    console.log("Participant deleted successfully:", id);
   } catch (error) {
     console.error("Error deleting participant:", error);
 
@@ -350,11 +329,10 @@ export async function updateParticipantRoom(
 export function revalidateFellowshipData(fellowshipName: string) {
   // This would be used with Next.js revalidateTag or revalidatePath
   // Implementation depends on your specific caching strategy
-  console.log(`Revalidating data for fellowship: ${fellowshipName}`);
 }
 
 export function revalidateAllData() {
-  console.log("Revalidating all application data");
+  // Implementation for revalidating all application data
 }
 
 // Type guards and validation

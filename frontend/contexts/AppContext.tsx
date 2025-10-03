@@ -10,11 +10,17 @@ export type { Participant, Room } from '../types';
 export interface FormData {
   name: string;
   phone: string;
+  contact: string;
+  guardianName: string;
+  guardianContact: string;
   fellowshipName: string;
+  area: string;
+  department: string;
   salvationDate: string;
   present: string;
   gender: string;
   age: number;
+  isSaved: string;
   profileImage?: string;
 }
 
@@ -55,11 +61,17 @@ export type AppAction =
 const initialFormData: FormData = {
   name: '',
   phone: '',
+  contact: '',
+  guardianName: '',
+  guardianContact: '',
   fellowshipName: '',
+  area: '',
+  department: '',
   salvationDate: '',
   present: 'present',
   gender: 'male',
   age: 18,
+  isSaved: 'no',
 };
 
 const initialState: AppState = {
