@@ -12,7 +12,8 @@
       "Bash(yarn build)",
       "Bash(timeout 10 npm run dev)",
       "Bash(timeout 60 npm run build)",
-      "Bash(yarn install)"
+      "Bash(yarn install)",
+      "Bash(wc:*)"
     ],
     "deny": [],
     "ask": []
