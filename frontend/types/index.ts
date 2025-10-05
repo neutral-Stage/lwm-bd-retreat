@@ -88,6 +88,18 @@ export interface RoomSelectionProps {
   onRoomSelect: (roomId: string) => void;
 }
 
+export interface SessionAttendanceParticipant {
+  participant: Participant;
+  session1: "present" | "absent" | "unmarked";
+  session2: "present" | "absent" | "unmarked";
+  session3: "present" | "absent" | "unmarked";
+  session4: "present" | "absent" | "unmarked";
+  session5: "present" | "absent" | "unmarked";
+  session6: "present" | "absent" | "unmarked";
+  notes?: string;
+  _id?: string;
+}
+
 export interface Group {
   _id: string;
   _type: "group";
@@ -100,6 +112,7 @@ export interface Group {
   description?: string;
   participants: Participant[];
   volunteers: Participant[];
+  sessionAttendanceParticipants?: SessionAttendanceParticipant[];
 }
 
 export interface CounsellingParticipant {

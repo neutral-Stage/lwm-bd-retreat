@@ -542,6 +542,24 @@ export async function getAllGroups(): Promise<Group[]> {
           fellowshipName,
           gender,
           present
+        },
+        "sessionAttendanceParticipants": sessionAttendanceParticipants[]{
+          "participant": participant->{
+            _id,
+            name,
+            contact,
+            department,
+            fellowshipName,
+            gender,
+            present
+          },
+          session1,
+          session2,
+          session3,
+          session4,
+          session5,
+          session6,
+          notes
         }
       }`,
       {},
@@ -1254,6 +1272,257 @@ export async function getCounsellingParticipants(counsellingId: string): Promise
   } catch (error) {
     console.error("Error fetching counselling participants:", error);
     return [];
+  }
+}
+
+// Session Attendance API Functions
+export async function updateGroupSessionAttendance(
+  groupId: string,
+  sessionNumber: number,
+  participantAttendance: { participantId: string; status: "present" | "absent" }[]
+): Promise<Group> {
+  try {
+    // First, get the current group document
+    const group = await client.fetch(
+      `*[_type == "group" && _id == $groupId][0]{
+        _id,
+        sessionAttendanceParticipants[]{
+          "participant": participant->{
+            _id,
+            name,
+            contact,
+            department,
+            fellowshipName,
+            gender,
+            present
+          },
+          session1,
+          session2,
+          session3,
+          session4,
+          session5,
+          session6,
+          notes
+        },
+        participants[]->{
+          _id,
+          name,
+          contact,
+          department,
+          fellowshipName,
+          gender,
+          present
+        }
+      }`,
+      { groupId }
+    );
+
+    if (!group) {
+      throw new Error("Group not found");
+    }
+
+    // Create or update session attendance participants
+    const existingAttendanceParticipants = group.sessionAttendanceParticipants || [];
+    const updatedAttendanceParticipants = [...existingAttendanceParticipants];
+
+    // Process each participant's attendance
+    participantAttendance.forEach(({ participantId, status }) => {
+      // Find existing attendance participant
+      const existingIndex = updatedAttendanceParticipants.findIndex(
+        (sap) => sap?.participant?._id === participantId
+      );
+
+      const sessionKey = `session${sessionNumber}`;
+
+      if (existingIndex >= 0) {
+        // Update existing attendance participant
+        updatedAttendanceParticipants[existingIndex] = {
+          ...updatedAttendanceParticipants[existingIndex],
+          [sessionKey]: status,
+        };
+      } else {
+        // Create new attendance participant
+        const participant = group.participants.find((p: any) => p._id === participantId);
+        if (participant) {
+          updatedAttendanceParticipants.push({
+            _type: "sessionAttendanceParticipant",
+            _key: `sap-${participantId}-${Date.now()}`,
+            participant: {
+              _ref: participantId,
+              _type: "reference",
+            },
+            session1: sessionNumber === 1 ? status : "unmarked",
+            session2: sessionNumber === 2 ? status : "unmarked",
+            session3: sessionNumber === 3 ? status : "unmarked",
+            session4: sessionNumber === 4 ? status : "unmarked",
+            session5: sessionNumber === 5 ? status : "unmarked",
+            session6: sessionNumber === 6 ? status : "unmarked",
+            notes: "",
+          });
+        }
+      }
+    });
+
+    // Update the group document
+    await client.patch(groupId)
+      .set({
+        sessionAttendanceParticipants: updatedAttendanceParticipants,
+        updatedAt: new Date().toISOString(),
+      })
+      .commit();
+
+    // Fetch and return the updated group
+    const updatedGroup = await getGroupById(groupId);
+    if (!updatedGroup) {
+      throw new Error("Failed to fetch updated group");
+    }
+
+    return updatedGroup;
+  } catch (error) {
+    console.error("Error updating group session attendance:", error);
+    throw new Error("Failed to update session attendance");
+  }
+}
+
+export async function getGroupSessionAttendance(groupId: string): Promise<Group | null> {
+  try {
+    const group = await client.fetch(
+      `*[_type == "group" && _id == $groupId][0] {
+        _id,
+        _type,
+        _createdAt,
+        _updatedAt,
+        name,
+        slug,
+        description,
+        "participants": participants[]->{
+          _id,
+          name,
+          contact,
+          department,
+          fellowshipName,
+          gender,
+          present
+        },
+        "volunteers": volunteers[]->{
+          _id,
+          name,
+          contact,
+          department,
+          fellowshipName,
+          gender,
+          present
+        },
+        "sessionAttendanceParticipants": sessionAttendanceParticipants[]{
+          "participant": participant->{
+            _id,
+            name,
+            contact,
+            department,
+            fellowshipName,
+            gender,
+            present
+          },
+          session1,
+          session2,
+          session3,
+          session4,
+          session5,
+          session6,
+          notes
+        }
+      }`,
+      { groupId }
+    );
+
+    return group || null;
+  } catch (error) {
+    console.error("Error fetching group session attendance:", error);
+    return null;
+  }
+}
+
+export async function updateSingleParticipantAttendance(
+  groupId: string,
+  participantId: string,
+  sessionNumber: number,
+  status: "present" | "absent"
+): Promise<void> {
+  try {
+    await updateGroupSessionAttendance(groupId, sessionNumber, [
+      { participantId, status }
+    ]);
+  } catch (error) {
+    console.error("Error updating single participant attendance:", error);
+    throw new Error("Failed to update participant attendance");
+  }
+}
+
+// Migration function to fix legacy session attendance data
+export async function migrateSessionAttendanceData(): Promise<void> {
+  try {
+    console.log("Starting session attendance data migration...");
+
+    // Fetch all groups with session attendance data
+    const groups = await client.fetch(`
+      *[_type == "group" && defined(sessionAttendanceParticipants)]{
+        _id,
+        name,
+        sessionAttendanceParticipants[]{
+          _key,
+          participant->{_id, name},
+          session1,
+          session2,
+          session3,
+          session4,
+          session5,
+          session6,
+          notes
+        }
+      }
+    `);
+
+    console.log(`Found ${groups.length} groups with session attendance data`);
+
+    for (const group of groups) {
+      let hasChanges = false;
+      const updatedParticipants = group.sessionAttendanceParticipants.map((sap: any) => {
+        const updated = { ...sap };
+
+        // Check each session - if it's "absent" but hasn't been explicitly set by user,
+        // we'll be conservative and only change sessions that are clearly wrong
+        // For this migration, we'll assume if ALL other sessions are "absent" but one is "present",
+        // then the "absent" ones were auto-set and should be "unmarked"
+
+        const sessions = [sap.session1, sap.session2, sap.session3, sap.session4, sap.session5, sap.session6];
+        const presentCount = sessions.filter(s => s === "present").length;
+        const absentCount = sessions.filter(s => s === "absent").length;
+
+        // If there's exactly 1 present and 5 absent, it's likely the old buggy behavior
+        if (presentCount === 1 && absentCount === 5) {
+          ['session1', 'session2', 'session3', 'session4', 'session5', 'session6'].forEach(sessionKey => {
+            if (updated[sessionKey] === "absent") {
+              updated[sessionKey] = "unmarked";
+              hasChanges = true;
+            }
+          });
+        }
+
+        return updated;
+      });
+
+      if (hasChanges) {
+        console.log(`Updating group: ${group.name} (${group._id})`);
+        await client.patch(group._id)
+          .set({ sessionAttendanceParticipants: updatedParticipants })
+          .commit();
+      }
+    }
+
+    console.log("Session attendance data migration completed!");
+  } catch (error) {
+    console.error("Error during migration:", error);
+    throw new Error("Migration failed");
   }
 }
 

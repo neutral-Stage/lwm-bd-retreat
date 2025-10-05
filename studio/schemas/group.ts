@@ -67,6 +67,18 @@ export default defineType({
       description: "List of volunteers assigned to this group",
     }),
     defineField({
+      name: "sessionAttendanceParticipants",
+      title: "Session Attendance Tracking",
+      type: "array",
+      of: [
+        {
+          type: "sessionAttendanceParticipant",
+        },
+      ],
+      validation: (Rule) => Rule.min(0).max(50),
+      description: "Track attendance for each participant across 6 sessions",
+    }),
+    defineField({
       name: "createdAt",
       title: "Created At",
       type: "datetime",
@@ -86,14 +98,19 @@ export default defineType({
       subtitle: "description",
       participants: "participants",
       volunteers: "volunteers",
+      sessionAttendanceParticipants: "sessionAttendanceParticipants",
     },
     prepare(selection) {
-      const { title, subtitle, participants, volunteers } = selection;
+      const { title, subtitle, participants, volunteers, sessionAttendanceParticipants } = selection;
       const participantCount = participants ? participants.length : 0;
       const volunteerCount = volunteers ? volunteers.length : 0;
+      const attendanceTrackingCount = sessionAttendanceParticipants ? sessionAttendanceParticipants.length : 0;
+
+      const attendanceInfo = attendanceTrackingCount > 0 ? ` • 📊 ${attendanceTrackingCount} tracked` : "";
+
       return {
         title,
-        subtitle: `${participantCount} participants, ${volunteerCount} volunteers ${subtitle ? `• ${subtitle}` : ""}`,
+        subtitle: `${participantCount} participants, ${volunteerCount} volunteers${attendanceInfo} ${subtitle ? `• ${subtitle}` : ""}`,
       };
     },
   },

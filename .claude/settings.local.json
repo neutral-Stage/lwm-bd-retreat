@@ -13,7 +13,11 @@
       "Bash(timeout 10 npm run dev)",
       "Bash(timeout 60 npm run build)",
       "Bash(yarn install)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(npm run dev:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

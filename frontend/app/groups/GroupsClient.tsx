@@ -49,7 +49,13 @@ import {
   deleteGroup,
   getAvailableParticipants,
   getAvailableVolunteers,
+  updateGroupSessionAttendance,
+  updateSingleParticipantAttendance,
+  getGroupSessionAttendance,
+  migrateSessionAttendanceData,
 } from "../../lib/data-fetching";
+import SessionAttendanceTracker from "../../components/SessionAttendanceTracker";
+import AttendanceDialog from "../../components/AttendanceDialog";
 
 interface GroupsClientProps {
   groups: Group[];
@@ -60,7 +66,9 @@ export default function GroupsClient({ groups: initialGroups }: GroupsClientProp
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [openAttendanceDialog, setOpenAttendanceDialog] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [selectedGroupForAttendance, setSelectedGroupForAttendance] = useState<Group | null>(null);
   const [availableParticipants, setAvailableParticipants] = useState<Participant[]>([]);
   const [availableVolunteers, setAvailableVolunteers] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(false);
@@ -69,6 +77,7 @@ export default function GroupsClient({ groups: initialGroups }: GroupsClientProp
     message: string;
     severity: "success" | "error";
   }>({ open: false, message: "", severity: "success" });
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   // Form state
   const [formData, setFormData] = useState({
@@ -230,20 +239,154 @@ export default function GroupsClient({ groups: initialGroups }: GroupsClientProp
     setOpenDeleteDialog(true);
   };
 
+  const toggleCardExpanded = (groupId: string) => {
+    setExpandedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupId)) {
+        newSet.delete(groupId);
+      } else {
+        newSet.add(groupId);
+      }
+      return newSet;
+    });
+  };
+
+  const openAttendanceDialogHandler = (group: Group) => {
+    setSelectedGroupForAttendance(group);
+    setOpenAttendanceDialog(true);
+  };
+
+  const handleSaveAttendance = async (attendanceData: {
+    sessionNumber: number;
+    participantAttendance: { participantId: string; status: "present" | "absent" }[];
+  }) => {
+    if (!selectedGroupForAttendance) return;
+
+    setLoading(true);
+    try {
+      const updatedGroup = await updateGroupSessionAttendance(
+        selectedGroupForAttendance._id,
+        attendanceData.sessionNumber,
+        attendanceData.participantAttendance
+      );
+
+      // Update the groups list with the updated group
+      setGroups(groups.map(g =>
+        g._id === selectedGroupForAttendance._id ? updatedGroup : g
+      ));
+
+      setSnackbar({
+        open: true,
+        message: `Session ${attendanceData.sessionNumber} attendance saved successfully`,
+        severity: "success",
+      });
+    } catch (error) {
+      console.error("Error saving attendance:", error);
+      setSnackbar({
+        open: true,
+        message: "Error saving attendance",
+        severity: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateSingleAttendance = async (
+    participantId: string,
+    sessionNumber: number,
+    status: "present" | "absent"
+  ) => {
+    const group = groups.find(g =>
+      g.participants?.some(p => p._id === participantId)
+    );
+
+    if (!group) return;
+
+    try {
+      await updateSingleParticipantAttendance(group._id, participantId, sessionNumber, status);
+
+      // Refresh the group data to show updated attendance
+      const updatedGroup = await getGroupSessionAttendance(group._id);
+      if (updatedGroup) {
+        setGroups(groups.map(g =>
+          g._id === group._id ? updatedGroup : g
+        ));
+      }
+
+      setSnackbar({
+        open: true,
+        message: "Attendance updated successfully",
+        severity: "success",
+      });
+    } catch (error) {
+      console.error("Error updating attendance:", error);
+      setSnackbar({
+        open: true,
+        message: "Error updating attendance",
+        severity: "error",
+      });
+    }
+  };
+
+  const handleUpdateAttendance = (
+    participantId: string,
+    sessionNumber: number,
+    status: "present" | "absent"
+  ) => {
+    handleUpdateSingleAttendance(participantId, sessionNumber, status);
+  };
+
+  const handleMigration = async () => {
+    setLoading(true);
+    try {
+      await migrateSessionAttendanceData();
+
+      setSnackbar({
+        open: true,
+        message: "Session attendance data migration completed successfully!",
+        severity: "success",
+      });
+
+      // Refresh all groups data after migration
+      window.location.reload();
+    } catch (error) {
+      console.error("Migration error:", error);
+      setSnackbar({
+        open: true,
+        message: "Migration failed. Please check console for details.",
+        severity: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Box sx={{ padding: 3 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h4" component="h1">
           Groups Management
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setOpenCreateDialog(true)}
-          size="large"
-        >
-          Create Group
-        </Button>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={handleMigration}
+            disabled={loading}
+            size="large"
+          >
+            {loading ? "Migrating..." : "Fix Session Data"}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setOpenCreateDialog(true)}
+            size="large"
+          >
+            Create Group
+          </Button>
+        </Box>
       </Box>
 
       {groups.length === 0 ? (
@@ -268,24 +411,65 @@ export default function GroupsClient({ groups: initialGroups }: GroupsClientProp
       ) : (
         <Grid container spacing={3}>
           {groups.map((group) => (
-            <Grid item xs={12} md={6} lg={4} key={group._id}>
-              <Card sx={{ height: "100%" }}>
-                <CardContent>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
-                    <Typography variant="h6" component="h2" gutterBottom>
-                      {group.name}
-                    </Typography>
-                    <Box>
+            <Grid item xs={12} key={group._id}>
+              <Accordion
+                expanded={expandedCards.has(group._id)}
+                onChange={() => toggleCardExpanded(group._id)}
+                sx={{
+                  boxShadow: 2,
+                  '&:before': { display: 'none' },
+                  borderRadius: 2,
+                  mb: 1
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{
+                    cursor: 'pointer',
+                    '& .MuiAccordionSummary-content': {
+                      alignItems: 'center'
+                    }
+                  }}
+                >
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
+                      <Typography variant="h6" component="h2">
+                        {group.name}
+                      </Typography>
+                      <Box sx={{ display: "flex", gap: 1 }}>
+                        <Chip
+                          icon={<PeopleIcon />}
+                          label={`${group.participants?.length || 0} Participants`}
+                          color="primary"
+                          variant="outlined"
+                          size="small"
+                        />
+                        <Chip
+                          icon={<PersonAddIcon />}
+                          label={`${group.volunteers?.length || 0} Volunteers`}
+                          color="secondary"
+                          variant="outlined"
+                          size="small"
+                        />
+                      </Box>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 1 }}>
                       <IconButton
                         size="small"
-                        onClick={() => openEditGroupDialog(group)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditGroupDialog(group);
+                        }}
                         title="Edit Group"
                       >
                         <EditIcon />
                       </IconButton>
                       <IconButton
                         size="small"
-                        onClick={() => openDeleteGroupDialog(group)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDeleteGroupDialog(group);
+                        }}
                         title="Delete Group"
                         color="error"
                       >
@@ -293,27 +477,16 @@ export default function GroupsClient({ groups: initialGroups }: GroupsClientProp
                       </IconButton>
                     </Box>
                   </Box>
+                </AccordionSummary>
 
-                  {group.description && (
-                    <Typography color="text.secondary" sx={{ mb: 2 }}>
-                      {group.description}
-                    </Typography>
-                  )}
+                <AccordionDetails>
+                  <Box>
 
-                  <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
-                    <Chip
-                      icon={<PeopleIcon />}
-                      label={`${group.participants?.length || 0} Participants`}
-                      color="primary"
-                      variant="outlined"
-                    />
-                    <Chip
-                      icon={<PersonAddIcon />}
-                      label={`${group.volunteers?.length || 0} Volunteers`}
-                      color="secondary"
-                      variant="outlined"
-                    />
-                  </Box>
+                    {group.description && (
+                      <Typography color="text.secondary" sx={{ mb: 3 }}>
+                        {group.description}
+                      </Typography>
+                    )}
 
                   <Accordion>
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -361,8 +534,25 @@ export default function GroupsClient({ groups: initialGroups }: GroupsClientProp
                         )}
                     </AccordionDetails>
                   </Accordion>
-                </CardContent>
-              </Card>
+
+                  <Accordion>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                      <Typography variant="subtitle2">Session Attendance</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <SessionAttendanceTracker
+                        group={group}
+                        onOpenAttendanceDialog={() => {
+                          setSelectedGroupForAttendance(group);
+                          setOpenAttendanceDialog(true);
+                        }}
+                        onUpdateAttendance={handleUpdateAttendance}
+                      />
+                    </AccordionDetails>
+                  </Accordion>
+                  </Box>
+                </AccordionDetails>
+              </Accordion>
             </Grid>
           ))}
         </Grid>
@@ -478,6 +668,19 @@ export default function GroupsClient({ groups: initialGroups }: GroupsClientProp
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Attendance Dialog */}
+      {selectedGroupForAttendance && (
+        <AttendanceDialog
+          open={openAttendanceDialog}
+          onClose={() => {
+            setOpenAttendanceDialog(false);
+            setSelectedGroupForAttendance(null);
+          }}
+          group={selectedGroupForAttendance}
+          onSaveAttendance={handleSaveAttendance}
+        />
+      )}
 
       {/* Snackbar for notifications */}
       <Snackbar
