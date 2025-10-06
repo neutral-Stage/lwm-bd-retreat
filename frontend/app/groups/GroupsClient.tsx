@@ -29,6 +29,7 @@ import {
   Delete as DeleteIcon,
   People as PeopleIcon,
   PersonAdd as PersonAddIcon,
+  FileDownload as FileDownloadIcon,
 } from "@mui/icons-material";
 import { Group, Participant } from "../../types";
 import {
@@ -39,6 +40,7 @@ import {
   getAvailableVolunteers,
   getGroupSessionAttendance,
 } from "../../lib/data-fetching";
+import { exportGroupsToExcel } from "../../lib/excel-export";
 import NewSessionAttendanceTracker from "../../components/NewSessionAttendanceTracker";
 
 interface GroupsClientProps {
@@ -256,6 +258,24 @@ export default function GroupsClient({
     }
   };
 
+  const handleExportGroups = () => {
+    try {
+      exportGroupsToExcel(groups);
+      setSnackbar({
+        open: true,
+        message: "Groups exported to Excel successfully",
+        severity: "success",
+      });
+    } catch (error) {
+      console.error("Error exporting groups:", error);
+      setSnackbar({
+        open: true,
+        message: "Error exporting groups to Excel",
+        severity: "error",
+      });
+    }
+  };
+
   return (
     <Box sx={{ padding: 3 }}>
       <Box
@@ -270,6 +290,15 @@ export default function GroupsClient({
           Groups Management
         </Typography>
         <Box sx={{ display: "flex", gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<FileDownloadIcon />}
+            onClick={handleExportGroups}
+            size="large"
+            disabled={groups.length === 0}
+          >
+            Export Excel
+          </Button>
           <Button
             variant="contained"
             startIcon={<AddIcon />}

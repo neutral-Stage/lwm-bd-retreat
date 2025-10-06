@@ -46,6 +46,7 @@ import {
   CheckCircle as DoneIcon,
   RadioButtonUnchecked as PendingIcon,
   Save as SaveIcon,
+  FileDownload as FileDownloadIcon,
 } from "@mui/icons-material";
 import { Counselling, Participant, CounsellingParticipant } from "../../types";
 import {
@@ -58,6 +59,7 @@ import {
   updateCounsellingParticipant,
   getCounsellingParticipants,
 } from "../../lib/data-fetching";
+import { exportCounsellingToExcel } from "../../lib/excel-export";
 
 interface CounsellingClientProps {
   counsellings: Counselling[];
@@ -82,7 +84,11 @@ interface ParticipantStatusCardProps {
   onUpdate: () => void;
 }
 
-function ParticipantStatusCard({ counsellingId, counsellingParticipant, onUpdate }: ParticipantStatusCardProps) {
+function ParticipantStatusCard({
+  counsellingId,
+  counsellingParticipant,
+  onUpdate,
+}: ParticipantStatusCardProps) {
   const [status, setStatus] = useState(counsellingParticipant.status);
   const [comments, setComments] = useState(counsellingParticipant.comments);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -145,7 +151,7 @@ function ParticipantStatusCard({ counsellingId, counsellingParticipant, onUpdate
         borderRadius: 2,
         backgroundColor: status === "done" ? "success.50" : "warning.50",
         transition: "all 0.3s ease",
-        position: "relative"
+        position: "relative",
       }}
     >
       {/* Success indicator */}
@@ -158,7 +164,7 @@ function ParticipantStatusCard({ counsellingId, counsellingParticipant, onUpdate
             color: "success.main",
             display: "flex",
             alignItems: "center",
-            gap: 0.5
+            gap: 0.5,
           }}
         >
           <SaveIcon fontSize="small" />
@@ -166,7 +172,14 @@ function ParticipantStatusCard({ counsellingId, counsellingParticipant, onUpdate
         </Box>
       )}
 
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
         <Box>
           <Typography variant="subtitle1" fontWeight="bold">
             {counsellingParticipant.participant.name}
@@ -186,7 +199,7 @@ function ParticipantStatusCard({ counsellingId, counsellingParticipant, onUpdate
             padding: 1,
             borderRadius: 1,
             "&:hover": { backgroundColor: "action.hover" },
-            transition: "background-color 0.2s"
+            transition: "background-color 0.2s",
           }}
           onClick={handleToggleStatus}
         >
@@ -243,14 +256,22 @@ function ParticipantStatusCard({ counsellingId, counsellingParticipant, onUpdate
   );
 }
 
-export default function CounsellingClient({ counsellings: initialCounsellings }: CounsellingClientProps) {
-  const [counsellings, setCounsellings] = useState<Counselling[]>(initialCounsellings);
+export default function CounsellingClient({
+  counsellings: initialCounsellings,
+}: CounsellingClientProps) {
+  const [counsellings, setCounsellings] =
+    useState<Counselling[]>(initialCounsellings);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  const [selectedCounselling, setSelectedCounselling] = useState<Counselling | null>(null);
-  const [availableCounsellors, setAvailableCounsellors] = useState<Participant[]>([]);
-  const [availableParticipants, setAvailableParticipants] = useState<Participant[]>([]);
+  const [selectedCounselling, setSelectedCounselling] =
+    useState<Counselling | null>(null);
+  const [availableCounsellors, setAvailableCounsellors] = useState<
+    Participant[]
+  >([]);
+  const [availableParticipants, setAvailableParticipants] = useState<
+    Participant[]
+  >([]);
   const [assignedMembers, setAssignedMembers] = useState<{
     counsellors: string[];
     participants: string[];
@@ -301,18 +322,22 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
 
   // Filter available counsellors to exclude already assigned ones (except current selection)
   const getFilteredCounsellors = () => {
-    return availableCounsellors.filter(counsellor =>
-      !assignedMembers.counsellors.includes(counsellor._id) ||
-      (selectedCounselling && selectedCounselling.counsellor._id === counsellor._id)
+    return availableCounsellors.filter(
+      (counsellor) =>
+        !assignedMembers.counsellors.includes(counsellor._id) ||
+        (selectedCounselling &&
+          selectedCounselling.counsellor._id === counsellor._id)
     );
   };
 
   // Filter available participants to exclude already assigned ones (except current selection)
   const getFilteredParticipants = () => {
-    const currentlySelectedIds = selectedCounselling?.participants.map(p => p._id) || [];
-    return availableParticipants.filter(participant =>
-      !assignedMembers.participants.includes(participant._id) ||
-      currentlySelectedIds.includes(participant._id)
+    const currentlySelectedIds =
+      selectedCounselling?.participants.map((p) => p._id) || [];
+    return availableParticipants.filter(
+      (participant) =>
+        !assignedMembers.participants.includes(participant._id) ||
+        currentlySelectedIds.includes(participant._id)
     );
   };
 
@@ -354,13 +379,15 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
       return;
     }
 
-    const duplicateParticipants = formData.participants.filter(p =>
+    const duplicateParticipants = formData.participants.filter((p) =>
       assignedMembers.participants.includes(p._id)
     );
     if (duplicateParticipants.length > 0) {
       setSnackbar({
         open: true,
-        message: `These participants are already assigned: ${duplicateParticipants.map(p => p.name).join(", ")}`,
+        message: `These participants are already assigned: ${duplicateParticipants
+          .map((p) => p.name)
+          .join(", ")}`,
         severity: "error",
       });
       return;
@@ -372,10 +399,10 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
         name: formData.name,
         description: formData.description,
         counsellor: formData.counsellor._id,
-        participants: formData.participants.map(p => ({
+        participants: formData.participants.map((p) => ({
           participantId: p._id,
           status: "pending" as const,
-          comments: ""
+          comments: "",
         })),
         meetingSchedule: formData.meetingSchedule,
         location: formData.location,
@@ -434,22 +461,29 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
 
     setLoading(true);
     try {
-      const updatedCounselling = await updateCounselling(selectedCounselling._id, {
-        name: formData.name,
-        description: formData.description,
-        counsellor: formData.counsellor,
-        participants: formData.participants.map(p => ({
-          participant: p,
-          status: "pending" as const,
-          comments: ""
-        })) as any, // Temporary type assertion for backward compatibility
-        meetingSchedule: formData.meetingSchedule,
-        location: formData.location,
-        status: formData.status,
-        notes: formData.notes,
-      });
+      const updatedCounselling = await updateCounselling(
+        selectedCounselling._id,
+        {
+          name: formData.name,
+          description: formData.description,
+          counsellor: formData.counsellor,
+          participants: formData.participants.map((p) => ({
+            participant: p,
+            status: "pending" as const,
+            comments: "",
+          })) as any, // Temporary type assertion for backward compatibility
+          meetingSchedule: formData.meetingSchedule,
+          location: formData.location,
+          status: formData.status,
+          notes: formData.notes,
+        }
+      );
 
-      setCounsellings(counsellings.map(c => c._id === selectedCounselling._id ? updatedCounselling : c));
+      setCounsellings(
+        counsellings.map((c) =>
+          c._id === selectedCounselling._id ? updatedCounselling : c
+        )
+      );
       setOpenEditDialog(false);
       resetForm();
       await loadAvailableData(); // Refresh assigned members
@@ -476,7 +510,9 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
     setLoading(true);
     try {
       await deleteCounselling(selectedCounselling._id);
-      setCounsellings(counsellings.filter(c => c._id !== selectedCounselling._id));
+      setCounsellings(
+        counsellings.filter((c) => c._id !== selectedCounselling._id)
+      );
       setOpenDeleteDialog(false);
       setSelectedCounselling(null);
       await loadAvailableData(); // Refresh assigned members
@@ -517,7 +553,7 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
       name: counselling.name,
       description: counselling.description || "",
       counsellor: counselling.counsellor,
-      participants: counselling.participants?.map(cp => cp.participant) || [],
+      participants: counselling.participants?.map((cp) => cp.participant) || [],
       meetingSchedule: counselling.meetingSchedule || "",
       location: counselling.location || "",
       status: counselling.status,
@@ -532,7 +568,7 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
   };
 
   const toggleCardExpanded = (counsellingId: string) => {
-    setExpandedCards(prev => {
+    setExpandedCards((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(counsellingId)) {
         newSet.delete(counsellingId);
@@ -553,34 +589,73 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
     }
   };
 
+  const handleExportCounselling = () => {
+    try {
+      exportCounsellingToExcel(counsellings);
+      setSnackbar({
+        open: true,
+        message: "Counselling teams exported to Excel successfully",
+        severity: "success",
+      });
+    } catch (error) {
+      console.error("Error exporting counselling teams:", error);
+      setSnackbar({
+        open: true,
+        message: "Error exporting counselling teams to Excel",
+        severity: "error",
+      });
+    }
+  };
+
   return (
     <Box sx={{ padding: 3 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
         <Typography variant="h4" component="h1">
           Counselling Teams
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => {
-            resetForm();
-            setOpenCreateDialog(true);
-          }}
-          size="large"
-        >
-          Create Team
-        </Button>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<FileDownloadIcon />}
+            onClick={handleExportCounselling}
+            size="large"
+            disabled={counsellings.length === 0}
+          >
+            Export Excel
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => {
+              resetForm();
+              setOpenCreateDialog(true);
+            }}
+            size="large"
+          >
+            Create Team
+          </Button>
+        </Box>
       </Box>
 
       {counsellings.length === 0 ? (
         <Card>
           <CardContent sx={{ textAlign: "center", py: 8 }}>
-            <PersonCheckIcon sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
+            <PersonCheckIcon
+              sx={{ fontSize: 64, color: "text.secondary", mb: 2 }}
+            />
             <Typography variant="h6" color="text.secondary" gutterBottom>
               No counselling teams found
             </Typography>
             <Typography color="text.secondary" sx={{ mb: 3 }}>
-              Create your first counselling team to get started with organizing counsellors and participants.
+              Create your first counselling team to get started with organizing
+              counsellors and participants.
             </Typography>
             <Button
               variant="contained"
@@ -603,22 +678,36 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
                 onChange={() => toggleCardExpanded(counselling._id)}
                 sx={{
                   boxShadow: 2,
-                  '&:before': { display: 'none' },
+                  "&:before": { display: "none" },
                   borderRadius: 2,
-                  mb: 1
+                  mb: 1,
                 }}
               >
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon />}
                   sx={{
-                    cursor: 'pointer',
-                    '& .MuiAccordionSummary-content': {
-                      alignItems: 'center'
-                    }
+                    cursor: "pointer",
+                    "& .MuiAccordionSummary-content": {
+                      alignItems: "center",
+                    },
                   }}
                 >
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      width: "100%",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        flex: 1,
+                      }}
+                    >
                       <Typography variant="h6" component="h2">
                         {counselling.name}
                       </Typography>
@@ -634,21 +723,37 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
                         size="small"
                       />
                       <Chip
-                        label={`${counselling.participants?.length || 0} participants`}
+                        label={`${
+                          counselling.participants?.length || 0
+                        } participants`}
                         color="secondary"
                         variant="outlined"
                         size="small"
                       />
                       {/* Progress indicator */}
-                      {counselling.participants && counselling.participants.length > 0 && (
-                        <Chip
-                          label={`${counselling.participants.filter(p => p.status === "done").length}/${counselling.participants.length} done`}
-                          color={counselling.participants.filter(p => p.status === "done").length === counselling.participants.length ? "success" : "warning"}
-                          size="small"
-                        />
-                      )}
+                      {counselling.participants &&
+                        counselling.participants.length > 0 && (
+                          <Chip
+                            label={`${
+                              counselling.participants.filter(
+                                (p) => p.status === "done"
+                              ).length
+                            }/${counselling.participants.length} done`}
+                            color={
+                              counselling.participants.filter(
+                                (p) => p.status === "done"
+                              ).length === counselling.participants.length
+                                ? "success"
+                                : "warning"
+                            }
+                            size="small"
+                          />
+                        )}
                     </Box>
-                    <Box sx={{ display: "flex", gap: 1 }} onClick={(e) => e.stopPropagation()}>
+                    <Box
+                      sx={{ display: "flex", gap: 1 }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <IconButton
                         size="small"
                         onClick={(e) => {
@@ -683,15 +788,34 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
                     )}
 
                     {(counselling.meetingSchedule || counselling.location) && (
-                      <Box sx={{ mb: 3, p: 2, backgroundColor: "grey.50", borderRadius: 1 }}>
+                      <Box
+                        sx={{
+                          mb: 3,
+                          p: 2,
+                          backgroundColor: "grey.50",
+                          borderRadius: 1,
+                        }}
+                      >
                         {counselling.meetingSchedule && (
-                          <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              mb: 0.5,
+                            }}
+                          >
                             <ScheduleIcon sx={{ fontSize: 16, mr: 1 }} />
                             {counselling.meetingSchedule}
                           </Typography>
                         )}
                         {counselling.location && (
-                          <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center" }}>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ display: "flex", alignItems: "center" }}
+                          >
                             <LocationIcon sx={{ fontSize: 16, mr: 1 }} />
                             {counselling.location}
                           </Typography>
@@ -701,23 +825,40 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
 
                     {/* Participant Management */}
                     <Box>
-                      <Typography variant="h6" color="secondary" gutterBottom sx={{ mb: 2 }}>
-                        <GroupIcon sx={{ fontSize: 20, mr: 1, verticalAlign: "middle" }} />
-                        Participant Progress ({counselling.participants?.length || 0})
+                      <Typography
+                        variant="h6"
+                        color="secondary"
+                        gutterBottom
+                        sx={{ mb: 2 }}
+                      >
+                        <GroupIcon
+                          sx={{ fontSize: 20, mr: 1, verticalAlign: "middle" }}
+                        />
+                        Participant Progress (
+                        {counselling.participants?.length || 0})
                       </Typography>
-                      {counselling.participants && counselling.participants.length > 0 ? (
+                      {counselling.participants &&
+                      counselling.participants.length > 0 ? (
                         <Box>
-                          {counselling.participants.map((counsellingParticipant) => (
-                            <ParticipantStatusCard
-                              key={counsellingParticipant.participant._id}
-                              counsellingId={counselling._id}
-                              counsellingParticipant={counsellingParticipant}
-                              onUpdate={refreshCounsellingData}
-                            />
-                          ))}
+                          {counselling.participants.map(
+                            (counsellingParticipant) => (
+                              <ParticipantStatusCard
+                                key={counsellingParticipant.participant._id}
+                                counsellingId={counselling._id}
+                                counsellingParticipant={counsellingParticipant}
+                                onUpdate={refreshCounsellingData}
+                              />
+                            )
+                          )}
                         </Box>
                       ) : (
-                        <Box sx={{ textAlign: "center", py: 4, color: "text.secondary" }}>
+                        <Box
+                          sx={{
+                            textAlign: "center",
+                            py: 4,
+                            color: "text.secondary",
+                          }}
+                        >
                           <GroupIcon sx={{ fontSize: 48, mb: 1 }} />
                           <Typography variant="body2">
                             No participants assigned yet.
@@ -727,8 +868,19 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
                     </Box>
 
                     {counselling.notes && (
-                      <Box sx={{ mt: 3, p: 2, backgroundColor: "info.50", borderRadius: 1 }}>
-                        <Typography variant="subtitle2" color="info.main" gutterBottom>
+                      <Box
+                        sx={{
+                          mt: 3,
+                          p: 2,
+                          backgroundColor: "info.50",
+                          borderRadius: 1,
+                        }}
+                      >
+                        <Typography
+                          variant="subtitle2"
+                          color="info.main"
+                          gutterBottom
+                        >
                           Notes
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
@@ -756,7 +908,9 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
         fullWidth
       >
         <DialogTitle>
-          {openCreateDialog ? "Create New Counselling Team" : "Edit Counselling Team"}
+          {openCreateDialog
+            ? "Create New Counselling Team"
+            : "Edit Counselling Team"}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 1 }}>
@@ -766,7 +920,9 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
               fullWidth
               variant="outlined"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               sx={{ mb: 3 }}
               required
             />
@@ -778,15 +934,21 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
               rows={2}
               variant="outlined"
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               sx={{ mb: 3 }}
             />
 
             <Autocomplete
               options={getFilteredCounsellors()}
-              getOptionLabel={(option) => `${option.name} (${option.fellowshipName})`}
+              getOptionLabel={(option) =>
+                `${option.name} (${option.fellowshipName})`
+              }
               value={formData.counsellor}
-              onChange={(_, newValue) => setFormData({ ...formData, counsellor: newValue })}
+              onChange={(_, newValue) =>
+                setFormData({ ...formData, counsellor: newValue })
+              }
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -801,9 +963,13 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
             <Autocomplete
               multiple
               options={getFilteredParticipants()}
-              getOptionLabel={(option) => `${option.name} (${option.fellowshipName})`}
+              getOptionLabel={(option) =>
+                `${option.name} (${option.fellowshipName})`
+              }
               value={formData.participants}
-              onChange={(_, newValue) => setFormData({ ...formData, participants: newValue })}
+              onChange={(_, newValue) =>
+                setFormData({ ...formData, participants: newValue })
+              }
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -822,7 +988,12 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
                   fullWidth
                   variant="outlined"
                   value={formData.meetingSchedule}
-                  onChange={(e) => setFormData({ ...formData, meetingSchedule: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      meetingSchedule: e.target.value,
+                    })
+                  }
                   placeholder="e.g., Daily at 9 AM"
                 />
               </Grid>
@@ -832,7 +1003,9 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
                   fullWidth
                   variant="outlined"
                   value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, location: e.target.value })
+                  }
                   placeholder="e.g., Room 101"
                 />
               </Grid>
@@ -843,7 +1016,9 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
               <Select
                 value={formData.status}
                 label="Status"
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                onChange={(e) =>
+                  setFormData({ ...formData, status: e.target.value as any })
+                }
               >
                 <MenuItem value="active">Active</MenuItem>
                 <MenuItem value="inactive">Inactive</MenuItem>
@@ -858,7 +1033,9 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
               rows={3}
               variant="outlined"
               value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, notes: e.target.value })
+              }
               placeholder="Additional notes about the team..."
             />
           </Box>
@@ -874,21 +1051,33 @@ export default function CounsellingClient({ counsellings: initialCounsellings }:
             Cancel
           </Button>
           <Button
-            onClick={openCreateDialog ? handleCreateCounselling : handleUpdateCounselling}
+            onClick={
+              openCreateDialog
+                ? handleCreateCounselling
+                : handleUpdateCounselling
+            }
             variant="contained"
             disabled={loading}
           >
-            {loading ? "Saving..." : openCreateDialog ? "Create Team" : "Update Team"}
+            {loading
+              ? "Saving..."
+              : openCreateDialog
+              ? "Create Team"
+              : "Update Team"}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
+      <Dialog
+        open={openDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
+      >
         <DialogTitle>Delete Counselling Team</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete the counselling team "{selectedCounselling?.name}"? This action cannot be undone.
+            Are you sure you want to delete the counselling team "
+            {selectedCounselling?.name}"? This action cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions>
