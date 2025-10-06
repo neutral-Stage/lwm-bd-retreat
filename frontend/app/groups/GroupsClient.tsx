@@ -118,7 +118,22 @@ export default function GroupsClient({
         volunteers: formData.volunteers.map((v) => v._id),
       });
 
-      setGroups([...groups, newGroup]);
+      // Fetch the complete group data with populated participants and volunteers
+      const { getGroupById } = await import("../../lib/data-fetching");
+      const completeGroup = await getGroupById(newGroup._id);
+
+      if (completeGroup) {
+        setGroups([...groups, completeGroup]);
+      } else {
+        // Fallback: manually construct the group with the data we have
+        const groupWithParticipants = {
+          ...newGroup,
+          participants: formData.participants,
+          volunteers: formData.volunteers,
+        };
+        setGroups([...groups, groupWithParticipants]);
+      }
+
       setOpenCreateDialog(false);
       resetForm();
       setSnackbar({

@@ -535,7 +535,10 @@ export async function getAllGroups(): Promise<Group[]> {
           department,
           fellowshipName,
           gender,
-          present
+          present,
+          regNo,
+          age,
+          area
         },
         "volunteers": volunteers[]->{
           _id,
@@ -544,7 +547,10 @@ export async function getAllGroups(): Promise<Group[]> {
           department,
           fellowshipName,
           gender,
-          present
+          present,
+          regNo,
+          age,
+          area
         },
         "sessionAttendanceParticipants": sessionAttendanceParticipants[]{
           "participant": participant->{
@@ -554,7 +560,10 @@ export async function getAllGroups(): Promise<Group[]> {
             department,
             fellowshipName,
             gender,
-            present
+            present,
+            regNo,
+            age,
+            area
           },
           session1,
           session2,
@@ -596,7 +605,10 @@ export async function getGroupById(id: string): Promise<Group | null> {
           department,
           fellowshipName,
           gender,
-          present
+          present,
+          regNo,
+          age,
+          area
         },
         "volunteers": volunteers[]->{
           _id,
@@ -605,12 +617,36 @@ export async function getGroupById(id: string): Promise<Group | null> {
           department,
           fellowshipName,
           gender,
-          present
+          present,
+          regNo,
+          age,
+          area
+        },
+        "sessionAttendanceParticipants": sessionAttendanceParticipants[]{
+          "participant": participant->{
+            _id,
+            name,
+            contact,
+            department,
+            fellowshipName,
+            gender,
+            present,
+            regNo,
+            age,
+            area
+          },
+          session1,
+          session2,
+          session3,
+          session4,
+          session5,
+          session6,
+          notes
         }
       }`,
       { id },
       {
-        next: { revalidate: REVALIDATE_TIME },
+        cache: "no-store", // Always fetch fresh data
       }
     );
 
@@ -1297,7 +1333,10 @@ export async function getCounsellingParticipants(
             department,
             fellowshipName,
             gender,
-            present
+            present,
+            regNo,
+            age,
+            area
           },
           status,
           comments
@@ -1335,7 +1374,10 @@ export async function updateGroupSessionAttendance(
             department,
             fellowshipName,
             gender,
-            present
+            present,
+            regNo,
+            age,
+            area
           },
           session1,
           session2,
@@ -1473,7 +1515,10 @@ export async function getGroupSessionAttendance(
             department,
             fellowshipName,
             gender,
-            present
+            present,
+            regNo,
+            age,
+            area
           },
           session1,
           session2,
