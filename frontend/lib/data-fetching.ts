@@ -166,9 +166,7 @@ export async function updateRoom(
       sanitizedUpdates.capacity = updates.capacity;
     }
 
-
     const result = await client.patch(id).set(sanitizedUpdates).commit();
-
 
     // Transform result to match Room interface with computed fields
     const roomWithComputed = {
@@ -193,7 +191,10 @@ export async function updateRoom(
 export async function deleteRoom(id: string): Promise<void> {
   try {
     // First check if the room exists
-    const roomExists = await client.fetch(`*[_type == "roomNo" && _id == $id][0]`, { id });
+    const roomExists = await client.fetch(
+      `*[_type == "roomNo" && _id == $id][0]`,
+      { id }
+    );
 
     if (!roomExists) {
       throw new Error("Room not found");
@@ -202,7 +203,9 @@ export async function deleteRoom(id: string): Promise<void> {
     await client.delete(id);
   } catch (error) {
     console.error("Error deleting room:", error);
-    throw new Error(error instanceof Error ? error.message : "Failed to delete room");
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to delete room"
+    );
   }
 }
 
@@ -910,7 +913,9 @@ export async function createCounselling(counsellingData: {
   name: string;
   description?: string;
   counsellor: string;
-  participants: string[] | { participantId: string; status: "done" | "pending"; comments: string }[];
+  participants:
+    | string[]
+    | { participantId: string; status: "done" | "pending"; comments: string }[];
   meetingSchedule?: string;
   location?: string;
   status?: "active" | "inactive" | "completed";
@@ -923,27 +928,35 @@ export async function createCounselling(counsellingData: {
     };
 
     // Handle both old format (string[]) and new format (CounsellingParticipant[])
-    const participantRefs = Array.isArray(counsellingData.participants) &&
-      typeof counsellingData.participants[0] === 'string'
-      ? counsellingData.participants.map((id) => ({
-          _ref: id,
-          _type: "reference",
-        }))
-      : null;
-
-    const counsellingParticipants = Array.isArray(counsellingData.participants) &&
-      typeof counsellingData.participants[0] === 'object'
-      ? (counsellingData.participants as { participantId: string; status: "done" | "pending"; comments: string }[]).map((cp, index) => ({
-          _type: "counsellingParticipant",
-          _key: `cp-${cp.participantId}-${Date.now()}-${index}`, // Generate unique key
-          participant: {
-            _ref: cp.participantId,
+    const participantRefs =
+      Array.isArray(counsellingData.participants) &&
+      typeof counsellingData.participants[0] === "string"
+        ? counsellingData.participants.map((id) => ({
+            _ref: id,
             _type: "reference",
-          },
-          status: cp.status,
-          comments: cp.comments,
-        }))
-      : [];
+          }))
+        : null;
+
+    const counsellingParticipants =
+      Array.isArray(counsellingData.participants) &&
+      typeof counsellingData.participants[0] === "object"
+        ? (
+            counsellingData.participants as {
+              participantId: string;
+              status: "done" | "pending";
+              comments: string;
+            }[]
+          ).map((cp, index) => ({
+            _type: "counsellingParticipant",
+            _key: `cp-${cp.participantId}-${Date.now()}-${index}`, // Generate unique key
+            participant: {
+              _ref: cp.participantId,
+              _type: "reference",
+            },
+            status: cp.status,
+            comments: cp.comments,
+          }))
+        : [];
 
     const createData: any = {
       _type: "counselling",
@@ -1007,16 +1020,28 @@ export async function updateCounselling(
     // Handle participants references - support both old and new formats
     if (updates.participants) {
       // Check if it's the new CounsellingParticipant format
-      if (updates.participants.length > 0 && 'participant' in updates.participants[0]) {
-        updateData.counsellingParticipants = updates.participants.map((cp: any, index: number) => ({
-          _type: "counsellingParticipant",
-          _key: cp._key || `cp-${typeof cp.participant === "string" ? cp.participant : cp.participant._id}-${Date.now()}-${index}`,
-          participant: typeof cp.participant === "string"
-            ? { _ref: cp.participant, _type: "reference" }
-            : { _ref: cp.participant._id, _type: "reference" },
-          status: cp.status || "pending",
-          comments: cp.comments || "",
-        }));
+      if (
+        updates.participants.length > 0 &&
+        "participant" in updates.participants[0]
+      ) {
+        updateData.counsellingParticipants = updates.participants.map(
+          (cp: any, index: number) => ({
+            _type: "counsellingParticipant",
+            _key:
+              cp._key ||
+              `cp-${
+                typeof cp.participant === "string"
+                  ? cp.participant
+                  : cp.participant._id
+              }-${Date.now()}-${index}`,
+            participant:
+              typeof cp.participant === "string"
+                ? { _ref: cp.participant, _type: "reference" }
+                : { _ref: cp.participant._id, _type: "reference" },
+            status: cp.status || "pending",
+            comments: cp.comments || "",
+          })
+        );
         // Clear old participants field if using new structure
         updateData.participants = undefined;
       } else {
@@ -1188,7 +1213,10 @@ export async function updateCounsellingParticipant(
     }
 
     // Check if using new counsellingParticipants structure
-    if (counselling.counsellingParticipants && counselling.counsellingParticipants.length > 0) {
+    if (
+      counselling.counsellingParticipants &&
+      counselling.counsellingParticipants.length > 0
+    ) {
       // Find the participant entry in counsellingParticipants
       const participantIndex = counselling.counsellingParticipants.findIndex(
         (cp: any) => cp.participant._ref === participantId
@@ -1198,7 +1226,8 @@ export async function updateCounsellingParticipant(
         throw new Error("Participant not found in counselling team");
       }
 
-      const participantEntry = counselling.counsellingParticipants[participantIndex];
+      const participantEntry =
+        counselling.counsellingParticipants[participantIndex];
 
       // Create updated participant object
       const updatedParticipant = {
@@ -1208,10 +1237,13 @@ export async function updateCounsellingParticipant(
       };
 
       // Replace the entire counsellingParticipants array with updated version
-      const updatedCounsellingParticipants = [...counselling.counsellingParticipants];
+      const updatedCounsellingParticipants = [
+        ...counselling.counsellingParticipants,
+      ];
       updatedCounsellingParticipants[participantIndex] = updatedParticipant;
 
-      await client.patch(counsellingId)
+      await client
+        .patch(counsellingId)
         .set({
           counsellingParticipants: updatedCounsellingParticipants,
           updatedAt: new Date().toISOString(),
@@ -1224,15 +1256,19 @@ export async function updateCounsellingParticipant(
       }
 
       // Create counsellingParticipants from legacy participants
-      const counsellingParticipants = counselling.participants.map((p: any, index: number) => ({
-        _type: "counsellingParticipant",
-        _key: `cp-${p._ref}-${Date.now()}-${index}`,
-        participant: p,
-        status: p._ref === participantId ? (updates.status || "pending") : "pending",
-        comments: p._ref === participantId ? (updates.comments || "") : "",
-      }));
+      const counsellingParticipants = counselling.participants.map(
+        (p: any, index: number) => ({
+          _type: "counsellingParticipant",
+          _key: `cp-${p._ref}-${Date.now()}-${index}`,
+          participant: p,
+          status:
+            p._ref === participantId ? updates.status || "pending" : "pending",
+          comments: p._ref === participantId ? updates.comments || "" : "",
+        })
+      );
 
-      await client.patch(counsellingId)
+      await client
+        .patch(counsellingId)
         .set({
           counsellingParticipants: counsellingParticipants,
           updatedAt: new Date().toISOString(),
@@ -1246,7 +1282,9 @@ export async function updateCounsellingParticipant(
 }
 
 // Get counselling participants with their salvation status and comments
-export async function getCounsellingParticipants(counsellingId: string): Promise<CounsellingParticipant[]> {
+export async function getCounsellingParticipants(
+  counsellingId: string
+): Promise<CounsellingParticipant[]> {
   try {
     const result = await client.fetch(
       `*[_type == "counselling" && _id == $counsellingId][0]{
@@ -1279,7 +1317,10 @@ export async function getCounsellingParticipants(counsellingId: string): Promise
 export async function updateGroupSessionAttendance(
   groupId: string,
   sessionNumber: number,
-  participantAttendance: { participantId: string; status: "present" | "absent" }[]
+  participantAttendance: {
+    participantId: string;
+    status: "present" | "absent";
+  }[]
 ): Promise<Group> {
   try {
     // First, get the current group document
@@ -1322,27 +1363,35 @@ export async function updateGroupSessionAttendance(
     }
 
     // Create or update session attendance participants
-    const existingAttendanceParticipants = group.sessionAttendanceParticipants || [];
+    const existingAttendanceParticipants =
+      group.sessionAttendanceParticipants || [];
     const updatedAttendanceParticipants = [...existingAttendanceParticipants];
 
     // Process each participant's attendance
     participantAttendance.forEach(({ participantId, status }) => {
       // Find existing attendance participant
-      const existingIndex = updatedAttendanceParticipants.findIndex(
-        (sap) => sap?.participant?._id === participantId
-      );
+      const existingIndex = updatedAttendanceParticipants.findIndex((sap) => {
+        const sapParticipantId =
+          sap?.participant?._id || sap?.participant?._ref;
+        return sapParticipantId === participantId;
+      });
 
       const sessionKey = `session${sessionNumber}`;
 
       if (existingIndex >= 0) {
         // Update existing attendance participant
+        const existingParticipant =
+          updatedAttendanceParticipants[existingIndex];
+
         updatedAttendanceParticipants[existingIndex] = {
-          ...updatedAttendanceParticipants[existingIndex],
+          ...existingParticipant,
           [sessionKey]: status,
         };
       } else {
         // Create new attendance participant
-        const participant = group.participants.find((p: any) => p._id === participantId);
+        const participant = group.participants.find(
+          (p: any) => p._id === participantId
+        );
         if (participant) {
           updatedAttendanceParticipants.push({
             _type: "sessionAttendanceParticipant",
@@ -1364,7 +1413,8 @@ export async function updateGroupSessionAttendance(
     });
 
     // Update the group document
-    await client.patch(groupId)
+    await client
+      .patch(groupId)
       .set({
         sessionAttendanceParticipants: updatedAttendanceParticipants,
         updatedAt: new Date().toISOString(),
@@ -1384,7 +1434,9 @@ export async function updateGroupSessionAttendance(
   }
 }
 
-export async function getGroupSessionAttendance(groupId: string): Promise<Group | null> {
+export async function getGroupSessionAttendance(
+  groupId: string
+): Promise<Group | null> {
   try {
     const group = await client.fetch(
       `*[_type == "group" && _id == $groupId][0] {
@@ -1450,7 +1502,7 @@ export async function updateSingleParticipantAttendance(
 ): Promise<void> {
   try {
     await updateGroupSessionAttendance(groupId, sessionNumber, [
-      { participantId, status }
+      { participantId, status },
     ]);
   } catch (error) {
     console.error("Error updating single participant attendance:", error);
@@ -1461,8 +1513,6 @@ export async function updateSingleParticipantAttendance(
 // Migration function to fix legacy session attendance data
 export async function migrateSessionAttendanceData(): Promise<void> {
   try {
-    console.log("Starting session attendance data migration...");
-
     // Fetch all groups with session attendance data
     const groups = await client.fetch(`
       *[_type == "group" && defined(sessionAttendanceParticipants)]{
@@ -1482,44 +1532,56 @@ export async function migrateSessionAttendanceData(): Promise<void> {
       }
     `);
 
-    console.log(`Found ${groups.length} groups with session attendance data`);
-
     for (const group of groups) {
       let hasChanges = false;
-      const updatedParticipants = group.sessionAttendanceParticipants.map((sap: any) => {
-        const updated = { ...sap };
+      const updatedParticipants = group.sessionAttendanceParticipants.map(
+        (sap: any) => {
+          const updated = { ...sap };
 
-        // Check each session - if it's "absent" but hasn't been explicitly set by user,
-        // we'll be conservative and only change sessions that are clearly wrong
-        // For this migration, we'll assume if ALL other sessions are "absent" but one is "present",
-        // then the "absent" ones were auto-set and should be "unmarked"
+          // Check each session - if it's "absent" but hasn't been explicitly set by user,
+          // we'll be conservative and only change sessions that are clearly wrong
+          // For this migration, we'll assume if ALL other sessions are "absent" but one is "present",
+          // then the "absent" ones were auto-set and should be "unmarked"
 
-        const sessions = [sap.session1, sap.session2, sap.session3, sap.session4, sap.session5, sap.session6];
-        const presentCount = sessions.filter(s => s === "present").length;
-        const absentCount = sessions.filter(s => s === "absent").length;
+          const sessions = [
+            sap.session1,
+            sap.session2,
+            sap.session3,
+            sap.session4,
+            sap.session5,
+            sap.session6,
+          ];
+          const presentCount = sessions.filter((s) => s === "present").length;
+          const absentCount = sessions.filter((s) => s === "absent").length;
 
-        // If there's exactly 1 present and 5 absent, it's likely the old buggy behavior
-        if (presentCount === 1 && absentCount === 5) {
-          ['session1', 'session2', 'session3', 'session4', 'session5', 'session6'].forEach(sessionKey => {
-            if (updated[sessionKey] === "absent") {
-              updated[sessionKey] = "unmarked";
-              hasChanges = true;
-            }
-          });
+          // If there's exactly 1 present and 5 absent, it's likely the old buggy behavior
+          if (presentCount === 1 && absentCount === 5) {
+            [
+              "session1",
+              "session2",
+              "session3",
+              "session4",
+              "session5",
+              "session6",
+            ].forEach((sessionKey) => {
+              if (updated[sessionKey] === "absent") {
+                updated[sessionKey] = "unmarked";
+                hasChanges = true;
+              }
+            });
+          }
+
+          return updated;
         }
-
-        return updated;
-      });
+      );
 
       if (hasChanges) {
-        console.log(`Updating group: ${group.name} (${group._id})`);
-        await client.patch(group._id)
+        await client
+          .patch(group._id)
           .set({ sessionAttendanceParticipants: updatedParticipants })
           .commit();
       }
     }
-
-    console.log("Session attendance data migration completed!");
   } catch (error) {
     console.error("Error during migration:", error);
     throw new Error("Migration failed");

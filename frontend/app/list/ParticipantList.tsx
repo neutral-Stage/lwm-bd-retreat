@@ -65,7 +65,6 @@ export default function ParticipantList({
     severity: "success" as "success" | "error",
   });
 
-
   // Clean the data (remove any remaining Unicode issues)
   const cleanedParticipants = participantState.map((p) => ({
     ...p,
@@ -76,7 +75,6 @@ export default function ParticipantList({
     gender: cleanText(p.gender || "male") as "male" | "female",
     present: cleanText(p.present || "present") as "present" | "absent",
   }));
-
 
   // Clean text function
   function cleanText(text: string) {
@@ -434,11 +432,9 @@ export default function ParticipantList({
             <TextField
               fullWidth
               label="Age"
-              type="number"
+              type="string"
               value={formData.age || ""}
-              onChange={(e) =>
-                handleChange("age", parseInt(e.target.value) || null)
-              }
+              onChange={(e) => handleChange("age", e.target.value || null)}
             />
           </Grid>
           <Grid item xs={12} sm={6}>

@@ -35,7 +35,7 @@ export default defineType({
     defineField({
       name: "age",
       title: "Age",
-      type: "number",
+      type: "string",
     }),
     defineField({
       name: "salvationDate",

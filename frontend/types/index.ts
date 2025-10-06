@@ -8,7 +8,7 @@ export interface Participant {
   contact?: string | null;
   phone?: string;
   birthYear?: number | null;
-  age?: number | null;
+  age?: string | null;
   gender: "male" | "female";
   present: "present" | "absent";
   isSaved?: boolean;
