@@ -517,6 +517,11 @@ export function isValidFellowship(data: any): data is Fellowship {
 }
 
 // Group data fetching functions
+// Helper function to generate a random key for Sanity array items
+function generateKey(): string {
+  return Math.random().toString(36).substring(2, 14);
+}
+
 export async function getAllGroups(): Promise<Group[]> {
   try {
     const groups = await client.fetch(
@@ -660,20 +665,22 @@ export async function getGroupById(id: string): Promise<Group | null> {
 export async function createGroup(groupData: {
   name: string;
   description?: string;
-  participants?: string[];
-  volunteers?: string[];
+  participants?: (string | { _id: string })[];
+  volunteers?: (string | { _id: string })[];
 }): Promise<Group> {
   try {
     const participantRefs =
-      groupData.participants?.map((id) => ({
-        _ref: id,
-        _type: "reference",
+      groupData.participants?.map((p) => ({
+        _key: generateKey(),
+        _ref: typeof p === "string" ? p : p._id,
+        _type: "reference" as const,
       })) || [];
 
     const volunteerRefs =
-      groupData.volunteers?.map((id) => ({
-        _ref: id,
-        _type: "reference",
+      groupData.volunteers?.map((v) => ({
+        _key: generateKey(),
+        _ref: typeof v === "string" ? v : v._id,
+        _type: "reference" as const,
       })) || [];
 
     const result = await client.create({
@@ -703,22 +710,29 @@ export async function createGroup(groupData: {
 
 export async function updateGroup(
   id: string,
-  updates: Partial<Group>
+  updates: Partial<Omit<Group, "participants" | "volunteers">> & {
+    participants?: (string | Participant)[];
+    volunteers?: (string | Participant)[];
+  }
 ): Promise<Group> {
   try {
     const updateData: any = { ...updates };
 
     // Handle participants and volunteers references
     if (updates.participants) {
-      updateData.participants = updates.participants.map((p) =>
-        typeof p === "string" ? { _ref: p, _type: "reference" } : p
-      );
+      updateData.participants = updates.participants.map((p) => ({
+        _key: generateKey(),
+        _ref: typeof p === "string" ? p : p._id,
+        _type: "reference" as const,
+      }));
     }
 
     if (updates.volunteers) {
-      updateData.volunteers = updates.volunteers.map((v) =>
-        typeof v === "string" ? { _ref: v, _type: "reference" } : v
-      );
+      updateData.volunteers = updates.volunteers.map((v) => ({
+        _key: generateKey(),
+        _ref: typeof v === "string" ? v : v._id,
+        _type: "reference" as const,
+      }));
     }
 
     updateData.updatedAt = new Date().toISOString();
