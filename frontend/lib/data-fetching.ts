@@ -716,7 +716,15 @@ export async function updateGroup(
   }
 ): Promise<Group> {
   try {
-    const updateData: any = { ...updates };
+    const updateData: any = {
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Only include basic fields if they exist
+    if (updates.name !== undefined) updateData.name = updates.name;
+    if (updates.description !== undefined)
+      updateData.description = updates.description;
+    if (updates.slug !== undefined) updateData.slug = updates.slug;
 
     // Handle participants and volunteers references
     if (updates.participants) {
@@ -735,7 +743,10 @@ export async function updateGroup(
       }));
     }
 
-    updateData.updatedAt = new Date().toISOString();
+    console.log(
+      "Updating group with data:",
+      JSON.stringify(updateData, null, 2)
+    );
 
     const result = await client.patch(id).set(updateData).commit();
 
