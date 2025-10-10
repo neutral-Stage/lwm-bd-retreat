@@ -139,3 +139,16 @@ export interface Counselling {
   status: "active" | "inactive" | "completed";
   notes?: string;
 }
+
+export interface Baptized {
+  _id: string;
+  _type: "baptized";
+  _createdAt: string;
+  _updatedAt: string;
+  participant: Participant;
+  status: "done" | "pending";
+  baptismDate?: string;
+  baptizedBy?: string;
+  location?: string;
+  notes?: string;
+}

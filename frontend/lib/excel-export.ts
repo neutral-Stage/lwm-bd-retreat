@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import { Group, Counselling, Participant } from "../types";
+import { Group, Counselling, Participant, Baptized } from "../types";
 
 /**
  * Export groups data to Excel with separate worksheets for each group
@@ -511,6 +511,137 @@ export function exportAllTeamsToExcel(
   // Generate filename with current date
   const currentDate = new Date().toISOString().split("T")[0];
   const filename = `All_Teams_Export_${currentDate}.xlsx`;
+
+  // Save the file
+  XLSX.writeFile(workbook, filename);
+}
+
+/**
+ * Export baptized data to Excel
+ */
+export function exportBaptizedToExcel(baptized: Baptized[]): void {
+  if (baptized.length === 0) {
+    alert("No baptized records to export");
+    return;
+  }
+
+  const workbook = XLSX.utils.book_new();
+
+  // Create summary data
+  const summaryData = [
+    {
+      "Total Records": baptized.length,
+      "Pending": baptized.filter((b) => b.status === "pending").length,
+      "Completed": baptized.filter((b) => b.status === "done").length,
+    },
+  ];
+
+  const summarySheet = XLSX.utils.json_to_sheet(summaryData);
+  XLSX.utils.book_append_sheet(workbook, summarySheet, "Summary");
+
+  // Create detailed data
+  const detailedData = baptized.map((record) => ({
+    "Registration No": record.participant.regNo || "",
+    Name: record.participant.name,
+    Contact: record.participant.contact || "",
+    Fellowship: record.participant.fellowshipName || "",
+    Gender: record.participant.gender,
+    Department: record.participant.department || "",
+    Status: record.status,
+    "Baptism Date": record.baptismDate
+      ? new Date(record.baptismDate).toLocaleDateString()
+      : "",
+    "Baptized By": record.baptizedBy || "",
+    Location: record.location || "",
+    Notes: record.notes || "",
+    "Created Date": new Date(record._createdAt).toLocaleDateString(),
+  }));
+
+  const detailedSheet = XLSX.utils.json_to_sheet(detailedData);
+
+  // Set column widths
+  detailedSheet["!cols"] = [
+    { wch: 15 }, // Registration No
+    { wch: 25 }, // Name
+    { wch: 15 }, // Contact
+    { wch: 20 }, // Fellowship
+    { wch: 10 }, // Gender
+    { wch: 15 }, // Department
+    { wch: 12 }, // Status
+    { wch: 15 }, // Baptism Date
+    { wch: 20 }, // Baptized By
+    { wch: 20 }, // Location
+    { wch: 30 }, // Notes
+    { wch: 15 }, // Created Date
+  ];
+
+  XLSX.utils.book_append_sheet(workbook, detailedSheet, "Baptized List");
+
+  // Create separate sheets for pending and completed
+  const pendingRecords = baptized.filter((b) => b.status === "pending");
+  const completedRecords = baptized.filter((b) => b.status === "done");
+
+  if (pendingRecords.length > 0) {
+    const pendingData = pendingRecords.map((record) => ({
+      "Registration No": record.participant.regNo || "",
+      Name: record.participant.name,
+      Contact: record.participant.contact || "",
+      Fellowship: record.participant.fellowshipName || "",
+      Gender: record.participant.gender,
+      Department: record.participant.department || "",
+      Notes: record.notes || "",
+      "Added Date": new Date(record._createdAt).toLocaleDateString(),
+    }));
+
+    const pendingSheet = XLSX.utils.json_to_sheet(pendingData);
+    pendingSheet["!cols"] = [
+      { wch: 15 },
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 20 },
+      { wch: 10 },
+      { wch: 15 },
+      { wch: 30 },
+      { wch: 15 },
+    ];
+    XLSX.utils.book_append_sheet(workbook, pendingSheet, "Pending");
+  }
+
+  if (completedRecords.length > 0) {
+    const completedData = completedRecords.map((record) => ({
+      "Registration No": record.participant.regNo || "",
+      Name: record.participant.name,
+      Contact: record.participant.contact || "",
+      Fellowship: record.participant.fellowshipName || "",
+      Gender: record.participant.gender,
+      Department: record.participant.department || "",
+      "Baptism Date": record.baptismDate
+        ? new Date(record.baptismDate).toLocaleDateString()
+        : "",
+      "Baptized By": record.baptizedBy || "",
+      Location: record.location || "",
+      Notes: record.notes || "",
+    }));
+
+    const completedSheet = XLSX.utils.json_to_sheet(completedData);
+    completedSheet["!cols"] = [
+      { wch: 15 },
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 20 },
+      { wch: 10 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 20 },
+      { wch: 20 },
+      { wch: 30 },
+    ];
+    XLSX.utils.book_append_sheet(workbook, completedSheet, "Completed");
+  }
+
+  // Generate filename with current date
+  const currentDate = new Date().toISOString().split("T")[0];
+  const filename = `Baptized_Export_${currentDate}.xlsx`;
 
   // Save the file
   XLSX.writeFile(workbook, filename);

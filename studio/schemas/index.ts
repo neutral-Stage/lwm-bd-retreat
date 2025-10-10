@@ -6,5 +6,6 @@ import group from './group'
 import counselling from './counselling'
 import counsellingParticipant from './counsellingParticipant'
 import sessionAttendanceParticipant from './sessionAttendanceParticipant'
+import baptized from './baptized'
 
-export const schemaTypes = [blockContent, fellowship, participant, roomNo, group, counselling, counsellingParticipant, sessionAttendanceParticipant]
+export const schemaTypes = [blockContent, fellowship, participant, roomNo, group, counselling, counsellingParticipant, sessionAttendanceParticipant, baptized]

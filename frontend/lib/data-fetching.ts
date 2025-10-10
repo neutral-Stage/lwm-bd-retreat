@@ -6,6 +6,7 @@ import {
   Group,
   Counselling,
   CounsellingParticipant,
+  Baptized,
 } from "../types/index";
 
 // Cache configuration
@@ -1655,6 +1656,262 @@ export async function migrateSessionAttendanceData(): Promise<void> {
   } catch (error) {
     console.error("Error during migration:", error);
     throw new Error("Migration failed");
+  }
+}
+
+// Baptized data fetching functions
+export async function getAllBaptized(): Promise<Baptized[]> {
+  try {
+    const baptized = await client.fetch(
+      `*[_type == "baptized"] | order(createdAt desc) {
+        _id,
+        _type,
+        _createdAt,
+        _updatedAt,
+        "participant": participant->{
+          _id,
+          name,
+          contact,
+          department,
+          fellowshipName,
+          gender,
+          present,
+          regNo,
+          age,
+          area
+        },
+        status,
+        baptismDate,
+        baptizedBy,
+        location,
+        notes,
+        createdAt,
+        updatedAt
+      }`,
+      {},
+      {
+        cache: "no-store", // Always fetch fresh data for admin
+      }
+    );
+
+    return Array.isArray(baptized) ? baptized : [];
+  } catch (error) {
+    console.error("Error fetching baptized list:", error);
+    return [];
+  }
+}
+
+export async function getBaptizedById(id: string): Promise<Baptized | null> {
+  try {
+    const baptized = await client.fetch(
+      `*[_type == "baptized" && _id == $id][0] {
+        _id,
+        _type,
+        _createdAt,
+        _updatedAt,
+        "participant": participant->{
+          _id,
+          name,
+          contact,
+          department,
+          fellowshipName,
+          gender,
+          present,
+          regNo,
+          age,
+          area
+        },
+        status,
+        baptismDate,
+        baptizedBy,
+        location,
+        notes,
+        createdAt,
+        updatedAt
+      }`,
+      { id },
+      {
+        next: { revalidate: REVALIDATE_TIME },
+      }
+    );
+
+    return baptized || null;
+  } catch (error) {
+    console.error("Error fetching baptized by ID:", error);
+    return null;
+  }
+}
+
+export async function createBaptized(baptizedData: {
+  participant: string;
+  status?: "done" | "pending";
+  baptismDate?: string;
+  baptizedBy?: string;
+  location?: string;
+  notes?: string;
+}): Promise<Baptized> {
+  try {
+    const participantRef = {
+      _ref: baptizedData.participant,
+      _type: "reference",
+    };
+
+    const result = await client.create({
+      _type: "baptized",
+      participant: participantRef,
+      status: baptizedData.status || "pending",
+      baptismDate: baptizedData.baptismDate || undefined,
+      baptizedBy: baptizedData.baptizedBy || undefined,
+      location: baptizedData.location || undefined,
+      notes: baptizedData.notes || "",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    if (!result || !result._id) {
+      throw new Error("Failed to create baptized record");
+    }
+
+    // Fetch the complete baptized data with populated references
+    const populatedBaptized = await getBaptizedById(result._id);
+
+    if (!populatedBaptized) {
+      throw new Error("Failed to fetch created baptized record");
+    }
+
+    return populatedBaptized;
+  } catch (error) {
+    console.error("Error creating baptized record:", error);
+    throw new Error("Failed to create baptized record");
+  }
+}
+
+export async function updateBaptized(
+  id: string,
+  updates: Partial<Baptized>
+): Promise<Baptized> {
+  try {
+    const updateData: any = { ...updates };
+
+    // Handle participant reference
+    if (updates.participant) {
+      updateData.participant =
+        typeof updates.participant === "string"
+          ? { _ref: updates.participant, _type: "reference" }
+          : { _ref: updates.participant._id, _type: "reference" };
+    }
+
+    updateData.updatedAt = new Date().toISOString();
+
+    const result = await client.patch(id).set(updateData).commit();
+
+    if (!result || !result._id) {
+      throw new Error("Failed to update baptized record");
+    }
+
+    // Fetch the complete baptized data with populated references
+    const populatedBaptized = await getBaptizedById(result._id);
+
+    if (!populatedBaptized) {
+      throw new Error("Failed to fetch updated baptized record");
+    }
+
+    return populatedBaptized;
+  } catch (error) {
+    console.error("Error updating baptized record:", error);
+    throw new Error("Failed to update baptized record");
+  }
+}
+
+export async function deleteBaptized(id: string): Promise<void> {
+  try {
+    await client.delete(id);
+  } catch (error) {
+    console.error("Error deleting baptized record:", error);
+    throw new Error("Failed to delete baptized record");
+  }
+}
+
+export function isValidBaptized(data: any): data is Baptized {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    typeof data._id === "string" &&
+    typeof data.status === "string" &&
+    data.participant
+  );
+}
+
+// Get participants available for baptism (not already in baptized list)
+export async function getAvailableBaptismParticipants(): Promise<Participant[]> {
+  try {
+    const participants = await client.fetch(
+      `*[_type == "participant" && present == "present" && !(
+        _id in *[_type == "baptized"].participant._ref
+      )]{
+        _id,
+        name,
+        contact,
+        department,
+        fellowshipName,
+        gender,
+        present,
+        regNo,
+        age,
+        area
+      } | order(name asc)`,
+      {},
+      {
+        cache: "no-store",
+      }
+    );
+
+    return Array.isArray(participants) ? participants : [];
+  } catch (error) {
+    console.error("Error fetching available baptism participants:", error);
+    return [];
+  }
+}
+
+// Get baptized participants by status
+export async function getBaptizedByStatus(status: "done" | "pending"): Promise<Baptized[]> {
+  try {
+    const baptized = await client.fetch(
+      `*[_type == "baptized" && status == $status] | order(createdAt desc) {
+        _id,
+        _type,
+        _createdAt,
+        _updatedAt,
+        "participant": participant->{
+          _id,
+          name,
+          contact,
+          department,
+          fellowshipName,
+          gender,
+          present,
+          regNo,
+          age,
+          area
+        },
+        status,
+        baptismDate,
+        baptizedBy,
+        location,
+        notes,
+        createdAt,
+        updatedAt
+      }`,
+      { status },
+      {
+        cache: "no-store",
+      }
+    );
+
+    return Array.isArray(baptized) ? baptized : [];
+  } catch (error) {
+    console.error("Error fetching baptized by status:", error);
+    return [];
   }
 }
 
