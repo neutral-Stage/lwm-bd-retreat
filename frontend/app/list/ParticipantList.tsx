@@ -38,6 +38,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { Participant } from "../../types";
 import { updateParticipant, deleteParticipant } from "../../lib/data-fetching";
+import { exportFilteredParticipantsToExcel } from "../../lib/excel-export";
 // Simplified inline edit modal will be created below
 
 interface ParticipantListProps {
@@ -169,138 +170,19 @@ export default function ParticipantList({
     setSnackbar((prev) => ({ ...prev, open: false }));
   };
 
-  // Export participants to XLSX grouped by fellowship
-  const handleExportToXLSX = async () => {
+  // Export filtered participants to XLSX
+  const handleExportToXLSX = () => {
     try {
-      // Import xlsx dynamically
-      const XLSX = await import("xlsx");
-
-      // Group participants by fellowship
-      const groupedByFellowship = cleanedParticipants.reduce(
-        (groups, participant) => {
-          const fellowship = participant.fellowshipName || "No Fellowship";
-          if (!groups[fellowship]) {
-            groups[fellowship] = [];
-          }
-          groups[fellowship].push(participant);
-          return groups;
-        },
-        {} as Record<string, Participant[]>
-      );
-
-      // Create single workbook
-      const workbook = XLSX.utils.book_new();
-
-      // Create main data array with grouped participants
-      const mainData: any[][] = [];
-
-      // Add header row
-      mainData.push([
-        "No.",
-        "Registration No",
-        "Name",
-        "Gender",
-        "Department",
-        "Fellowship",
-        "Area",
-        "Age",
-        "Contact",
-        "Guardian Name",
-        "Guardian Contact",
-        "Present Status",
-        "Fee Paid",
-      ]);
-
-      // Add participants grouped by fellowship
-      let sequentialNumber = 1;
-
-      Object.entries(groupedByFellowship)
-        .sort(([a], [b]) => a.localeCompare(b)) // Sort fellowships alphabetically
-        .forEach(([fellowship, participants]) => {
-          // Add fellowship header row
-          mainData.push([
-            `=== ${fellowship} (${participants.length} participants) ===`,
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-          ]);
-
-          // Add participants under this fellowship
-          participants
-            .sort((a, b) => (a.name || "").localeCompare(b.name || "")) // Sort participants alphabetically
-            .forEach((participant) => {
-              mainData.push([
-                sequentialNumber++,
-                participant.regNo || "",
-                participant.name || "",
-                participant.gender || "",
-                participant.department || "",
-                participant.fellowshipName || "",
-                participant.area || "",
-                participant.age?.toString() || "",
-                participant.contact || "",
-                participant.guardianName || "",
-                participant.guardianContact || "",
-                participant.present || "",
-                participant.feePaid ? "Yes" : "No",
-              ]);
-            });
-
-          // Add empty row between fellowships
-          mainData.push(["", "", "", "", "", "", "", "", "", "", "", "", ""]);
-        });
-
-      // Create the sheet
-      const sheet = XLSX.utils.aoa_to_sheet(mainData);
-
-      // Style the fellowship header rows (they will be in column A)
-      const range = XLSX.utils.decode_range(sheet["!ref"] || "A1");
-      for (let row = range.s.r; row <= range.e.r; row++) {
-        const cellAddress = XLSX.utils.encode_cell({ r: row, c: 0 });
-        if (
-          mainData[row] &&
-          mainData[row][0] &&
-          typeof mainData[row][0] === "string" &&
-          mainData[row][0].includes("===")
-        ) {
-          // Fellowship header row - make it bold
-          if (!sheet[cellAddress]) sheet[cellAddress] = { v: mainData[row][0] };
-          sheet[cellAddress].s = {
-            font: { bold: true },
-            fill: { fgColor: { rgb: "E3F2FD" } },
-          };
-        }
-      }
-
-      // Add the sheet to workbook
-      XLSX.utils.book_append_sheet(
-        workbook,
-        sheet,
-        "Participants by Fellowship"
-      );
-
-      // Generate filename with timestamp
-      const timestamp = new Date()
-        .toISOString()
-        .slice(0, 19)
-        .replace(/[-T:]/g, "");
-      const filename = `Participants_by_Fellowship_${timestamp}.xlsx`;
-
-      // Save file
-      XLSX.writeFile(workbook, filename);
+      exportFilteredParticipantsToExcel(filteredParticipants, {
+        statusFilter,
+        departmentFilter,
+        fellowshipFilter,
+        groupBy,
+      });
 
       setSnackbar({
         open: true,
-        message: `✅ Exported ${cleanedParticipants.length} participants grouped by fellowship to ${filename}`,
+        message: `✅ Exported ${filteredParticipants.length} filtered participants to Excel`,
         severity: "success",
       });
     } catch (error) {
@@ -548,8 +430,9 @@ export default function ParticipantList({
           onClick={handleExportToXLSX}
           size="large"
           startIcon={<FileDownloadIcon />}
+          disabled={filteredParticipants.length === 0}
         >
-          Export to Excel
+          Export Filtered ({filteredParticipants.length})
         </Button>
       </Box>
 

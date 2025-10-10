@@ -646,3 +646,191 @@ export function exportBaptizedToExcel(baptized: Baptized[]): void {
   // Save the file
   XLSX.writeFile(workbook, filename);
 }
+
+/**
+ * Export filtered participants to Excel (for participant list page only)
+ */
+export function exportFilteredParticipantsToExcel(
+  participants: Participant[],
+  filterInfo?: {
+    statusFilter?: string;
+    departmentFilter?: string;
+    fellowshipFilter?: string;
+    groupBy?: string;
+  }
+): void {
+  if (participants.length === 0) {
+    alert("No participants to export");
+    return;
+  }
+
+  const workbook = XLSX.utils.book_new();
+
+  // Create main data array
+  const mainData: any[][] = [];
+
+  // Add title with filter info
+  const filterTitle = [];
+  if (filterInfo?.statusFilter && filterInfo.statusFilter !== "all") {
+    filterTitle.push(`Status: ${filterInfo.statusFilter}`);
+  }
+  if (filterInfo?.departmentFilter && filterInfo.departmentFilter !== "all") {
+    filterTitle.push(`Department: ${filterInfo.departmentFilter}`);
+  }
+  if (filterInfo?.fellowshipFilter && filterInfo.fellowshipFilter !== "all") {
+    filterTitle.push(`Fellowship: ${filterInfo.fellowshipFilter}`);
+  }
+  if (filterInfo?.groupBy && filterInfo.groupBy !== "none") {
+    filterTitle.push(`Grouped by: ${filterInfo.groupBy}`);
+  }
+
+  if (filterTitle.length > 0) {
+    mainData.push([`Filtered Participants Export - ${filterTitle.join(", ")}`]);
+    mainData.push([""]); // Empty row
+  }
+
+  // Add header row
+  mainData.push([
+    "No.",
+    "Registration No",
+    "Name",
+    "Gender",
+    "Department",
+    "Fellowship",
+    "Area",
+    "Age",
+    "Contact",
+    "Guardian Name",
+    "Guardian Contact",
+    "Present Status",
+    "Fee Paid",
+  ]);
+
+  // Check if grouping by fellowship is enabled
+  const shouldGroupByFellowship = filterInfo?.groupBy === "fellowshipName";
+
+  if (shouldGroupByFellowship) {
+    // Group participants by fellowship
+    const groupedByFellowship = participants.reduce(
+      (groups, participant) => {
+        const fellowship = participant.fellowshipName || "No Fellowship";
+        if (!groups[fellowship]) {
+          groups[fellowship] = [];
+        }
+        groups[fellowship].push(participant);
+        return groups;
+      },
+      {} as Record<string, Participant[]>
+    );
+
+    // Add participants grouped by fellowship
+    let sequentialNumber = 1;
+
+    Object.entries(groupedByFellowship)
+      .sort(([a], [b]) => a.localeCompare(b)) // Sort fellowships alphabetically
+      .forEach(([fellowship, participantGroup]) => {
+        // Add fellowship header row
+        mainData.push([
+          `=== ${fellowship} (${participantGroup.length} participants) ===`,
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+        ]);
+
+        // Add participants under this fellowship
+        participantGroup
+          .sort((a, b) => (a.name || "").localeCompare(b.name || "")) // Sort participants alphabetically
+          .forEach((participant) => {
+            mainData.push([
+              sequentialNumber++,
+              participant.regNo || "",
+              participant.name || "",
+              participant.gender || "",
+              participant.department || "",
+              participant.fellowshipName || "",
+              participant.area || "",
+              participant.age?.toString() || "",
+              participant.contact || "",
+              participant.guardianName || "",
+              participant.guardianContact || "",
+              participant.present || "",
+              participant.feePaid ? "Yes" : "No",
+            ]);
+          });
+
+        // Add empty row between fellowships
+        mainData.push(["", "", "", "", "", "", "", "", "", "", "", "", ""]);
+      });
+  } else {
+    // Flat list - no grouping
+    participants
+      .sort((a, b) => (a.name || "").localeCompare(b.name || "")) // Sort participants alphabetically
+      .forEach((participant, index) => {
+        mainData.push([
+          index + 1,
+          participant.regNo || "",
+          participant.name || "",
+          participant.gender || "",
+          participant.department || "",
+          participant.fellowshipName || "",
+          participant.area || "",
+          participant.age?.toString() || "",
+          participant.contact || "",
+          participant.guardianName || "",
+          participant.guardianContact || "",
+          participant.present || "",
+          participant.feePaid ? "Yes" : "No",
+        ]);
+      });
+  }
+
+  // Create the sheet
+  const sheet = XLSX.utils.aoa_to_sheet(mainData);
+
+  // Set column widths
+  const columnWidths = [
+    { wch: 6 }, // No.
+    { wch: 15 }, // Registration No
+    { wch: 25 }, // Name
+    { wch: 10 }, // Gender
+    { wch: 15 }, // Department
+    { wch: 20 }, // Fellowship
+    { wch: 15 }, // Area
+    { wch: 8 }, // Age
+    { wch: 15 }, // Contact
+    { wch: 20 }, // Guardian Name
+    { wch: 15 }, // Guardian Contact
+    { wch: 12 }, // Present Status
+    { wch: 10 }, // Fee Paid
+  ];
+  sheet["!cols"] = columnWidths;
+
+  // Add the sheet to workbook with appropriate name
+  const sheetName = shouldGroupByFellowship ? "Participants by Fellowship" : "Participants List";
+  XLSX.utils.book_append_sheet(
+    workbook,
+    sheet,
+    sheetName
+  );
+
+  // Generate filename with timestamp and filter info
+  const timestamp = new Date()
+    .toISOString()
+    .slice(0, 19)
+    .replace(/[-T:]/g, "");
+
+  const filterSuffix = filterTitle.length > 0 ? `_${filterTitle.join("_").replace(/[^\w]/g, "")}` : "";
+  const filename = `Participants_Filtered${filterSuffix}_${timestamp}.xlsx`;
+
+  // Save file
+  XLSX.writeFile(workbook, filename);
+}
