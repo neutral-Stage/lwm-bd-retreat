@@ -758,12 +758,6 @@ export default function CounsellingClient({
                         }}
                       >
                         <Chip
-                          label={statusLabels[counselling.status]}
-                          color={statusColors[counselling.status]}
-                          size="small"
-                          sx={{ fontSize: { xs: "0.7rem", sm: "0.8125rem" } }}
-                        />
-                        <Chip
                           label={`${counselling.counsellor.name} (Counsellor)`}
                           color="primary"
                           variant="outlined"

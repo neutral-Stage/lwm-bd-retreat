@@ -473,14 +473,28 @@ export default function GroupsClient({
                           size="small"
                           sx={{ fontSize: { xs: "0.7rem", sm: "0.8125rem" } }}
                         />
-                        <Chip
-                          icon={<PersonAddIcon />}
-                          label={`${group.volunteers?.length || 0} Volunteers`}
-                          color="secondary"
-                          variant="outlined"
-                          size="small"
-                          sx={{ fontSize: { xs: "0.7rem", sm: "0.8125rem" } }}
-                        />
+                        {group.volunteers && group.volunteers.length > 0 ? (
+                          group.volunteers.map((volunteer) => (
+                            <Chip
+                              key={volunteer._id}
+                              icon={<PersonAddIcon />}
+                              label={`${volunteer.name} (Volunteer)`}
+                              color="secondary"
+                              variant="outlined"
+                              size="small"
+                              sx={{ fontSize: { xs: "0.7rem", sm: "0.8125rem" } }}
+                            />
+                          ))
+                        ) : (
+                          <Chip
+                            icon={<PersonAddIcon />}
+                            label="No Volunteers"
+                            color="secondary"
+                            variant="outlined"
+                            size="small"
+                            sx={{ fontSize: { xs: "0.7rem", sm: "0.8125rem" } }}
+                          />
+                        )}
                       </Box>
                     </Box>
                     <Box
