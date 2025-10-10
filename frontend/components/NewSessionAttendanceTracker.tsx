@@ -36,7 +36,7 @@ interface NewSessionAttendanceTrackerProps {
 
 const SESSIONS = [1, 2, 3, 4, 5, 6] as const;
 
-export default function NewSessionAttendanceTracker({
+const NewSessionAttendanceTracker = React.memo(function NewSessionAttendanceTracker({
   group,
   onDataUpdate,
 }: NewSessionAttendanceTrackerProps) {
@@ -125,8 +125,8 @@ export default function NewSessionAttendanceTracker({
       return (
         <Box
           sx={{
-            width: 20,
-            height: 20,
+            width: { xs: 16, sm: 20 },
+            height: { xs: 16, sm: 20 },
             borderRadius: "50%",
             border: `2px solid ${theme.palette.primary.main}`,
             backgroundColor: alpha(theme.palette.primary.main, 0.1),
@@ -136,20 +136,22 @@ export default function NewSessionAttendanceTracker({
       );
     }
 
+    const iconSize = { xs: 20, sm: 24 };
+
     switch (status) {
       case "present":
         return (
           <PresentIcon
-            sx={{ color: theme.palette.success.main, fontSize: 24 }}
+            sx={{ color: theme.palette.success.main, fontSize: iconSize }}
           />
         );
       case "absent":
         return (
-          <AbsentIcon sx={{ color: theme.palette.error.main, fontSize: 24 }} />
+          <AbsentIcon sx={{ color: theme.palette.error.main, fontSize: iconSize }} />
         );
       case "unmarked":
         return (
-          <UnmarkedIcon sx={{ color: theme.palette.grey[400], fontSize: 24 }} />
+          <UnmarkedIcon sx={{ color: theme.palette.grey[400], fontSize: iconSize }} />
         );
     }
   };
@@ -168,11 +170,28 @@ export default function NewSessionAttendanceTracker({
   if (!group.participants || group.participants.length === 0) {
     return (
       <Card sx={{ mt: 3 }}>
-        <CardContent sx={{ textAlign: "center", py: 6 }}>
-          <Typography variant="h6" color="text.secondary" gutterBottom>
+        <CardContent sx={{
+          textAlign: "center",
+          py: { xs: 4, sm: 6 },
+          px: { xs: 2, sm: 3 }
+        }}>
+          <Typography
+            variant="h6"
+            color="text.secondary"
+            gutterBottom
+            sx={{
+              fontSize: { xs: "1.125rem", sm: "1.25rem" }
+            }}
+          >
             No Participants Found
           </Typography>
-          <Typography color="text.secondary">
+          <Typography
+            color="text.secondary"
+            sx={{
+              fontSize: { xs: "0.875rem", sm: "1rem" },
+              lineHeight: { xs: 1.4, sm: 1.5 }
+            }}
+          >
             Add participants to this group to start tracking session attendance.
           </Typography>
         </CardContent>
@@ -186,15 +205,42 @@ export default function NewSessionAttendanceTracker({
         variant="h5"
         fontWeight="600"
         color="primary.main"
-        sx={{ mb: 3 }}
+        sx={{
+          mb: 3,
+          fontSize: { xs: "1.25rem", sm: "1.5rem" },
+          textAlign: { xs: "center", sm: "left" }
+        }}
       >
         📊 Session Attendance Tracking
       </Typography>
 
-      <Card sx={{ borderRadius: 3, boxShadow: theme.shadows[4] }}>
+      <Card sx={{
+        borderRadius: 3,
+        boxShadow: theme.shadows[4],
+        overflow: "hidden"
+      }}>
         <CardContent sx={{ p: 0 }}>
-          <TableContainer>
-            <Table stickyHeader>
+          <TableContainer sx={{
+            overflowX: "auto",
+            maxWidth: "100%",
+            // Improve scroll on mobile
+            "&::-webkit-scrollbar": {
+              height: 8,
+            },
+            "&::-webkit-scrollbar-track": {
+              backgroundColor: alpha(theme.palette.grey[300], 0.3),
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: alpha(theme.palette.primary.main, 0.5),
+              borderRadius: 4,
+            },
+          }}>
+            <Table
+              stickyHeader
+              sx={{
+                minWidth: { xs: 800, sm: "100%" }, // Ensure minimum width on mobile
+              }}
+            >
               <TableHead>
                 <TableRow>
                   <TableCell
@@ -205,7 +251,9 @@ export default function NewSessionAttendanceTracker({
                         theme.palette.primary.main,
                         0.1
                       )}`,
-                      minWidth: 200,
+                      minWidth: { xs: 150, sm: 200 },
+                      fontSize: { xs: "0.875rem", sm: "1rem" },
+                      padding: { xs: "8px", sm: "16px" },
                     }}
                   >
                     Participant
@@ -224,10 +272,19 @@ export default function NewSessionAttendanceTracker({
                           theme.palette.primary.main,
                           0.1
                         )}`,
-                        minWidth: 100,
+                        minWidth: { xs: 80, sm: 100 },
+                        fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                        padding: { xs: "4px", sm: "16px" },
                       }}
                     >
-                      Session {sessionNumber}
+                      <Box sx={{ display: { xs: "block", sm: "inline" } }}>
+                        <Box sx={{ display: { xs: "none", sm: "inline" } }}>
+                          Session {sessionNumber}
+                        </Box>
+                        <Box sx={{ display: { xs: "inline", sm: "none" } }}>
+                          S{sessionNumber}
+                        </Box>
+                      </Box>
                     </TableCell>
                   ))}
                   <TableCell
@@ -239,10 +296,19 @@ export default function NewSessionAttendanceTracker({
                         theme.palette.success.main,
                         0.1
                       )}`,
-                      minWidth: 120,
+                      minWidth: { xs: 100, sm: 120 },
+                      fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                      padding: { xs: "4px", sm: "16px" },
                     }}
                   >
-                    Attendance Rate
+                    <Box sx={{ display: { xs: "block", sm: "inline" } }}>
+                      <Box sx={{ display: { xs: "none", sm: "inline" } }}>
+                        Attendance Rate
+                      </Box>
+                      <Box sx={{ display: { xs: "inline", sm: "none" } }}>
+                        Rate
+                      </Box>
+                    </Box>
                   </TableCell>
                 </TableRow>
               </TableHead>
@@ -289,12 +355,29 @@ export default function NewSessionAttendanceTracker({
                             : alpha(theme.palette.grey[50], 0.5),
                       }}
                     >
-                      <TableCell sx={{ py: 2 }}>
+                      <TableCell sx={{
+                        py: { xs: 1, sm: 2 },
+                        px: { xs: 1, sm: 2 }
+                      }}>
                         <Box>
-                          <Typography variant="body1" fontWeight="600">
+                          <Typography
+                            variant="body1"
+                            fontWeight="600"
+                            sx={{
+                              fontSize: { xs: "0.875rem", sm: "1rem" },
+                              lineHeight: { xs: 1.2, sm: 1.5 }
+                            }}
+                          >
                             {participant.name}
                           </Typography>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{
+                              fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                              display: { xs: "block", sm: "block" }
+                            }}
+                          >
                             {participant.fellowshipName}
                           </Typography>
                         </Box>
@@ -327,7 +410,10 @@ export default function NewSessionAttendanceTracker({
                           <TableCell
                             key={sessionNumber}
                             align="center"
-                            sx={{ py: 2 }}
+                            sx={{
+                              py: { xs: 1, sm: 2 },
+                              px: { xs: 0.5, sm: 1 }
+                            }}
                           >
                             <Tooltip
                               title={`Click to cycle: ${finalStatus} → ${
@@ -347,15 +433,17 @@ export default function NewSessionAttendanceTracker({
                                 }
                                 disabled={isUpdating}
                                 sx={{
-                                  padding: 1,
+                                  padding: { xs: 0.5, sm: 1 },
                                   borderRadius: 2,
                                   transition: "all 0.2s ease",
+                                  minWidth: { xs: 32, sm: 40 },
+                                  minHeight: { xs: 32, sm: 40 },
                                   "&:hover": {
                                     backgroundColor: alpha(
                                       getStatusColor(finalStatus),
                                       0.1
                                     ),
-                                    transform: "scale(1.1)",
+                                    transform: { xs: "scale(1.05)", sm: "scale(1.1)" },
                                   },
                                   "&:disabled": {
                                     opacity: 0.7,
@@ -368,13 +456,17 @@ export default function NewSessionAttendanceTracker({
                           </TableCell>
                         );
                       })}
-                      <TableCell align="center" sx={{ py: 2 }}>
+                      <TableCell align="center" sx={{
+                        py: { xs: 1, sm: 2 },
+                        px: { xs: 0.5, sm: 1 }
+                      }}>
                         <Box
                           sx={{
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            gap: 1,
+                            gap: { xs: 0.5, sm: 1 },
+                            flexDirection: { xs: "column", sm: "row" },
                           }}
                         >
                           <Typography
@@ -387,10 +479,19 @@ export default function NewSessionAttendanceTracker({
                                 ? "warning.main"
                                 : "error.main"
                             }
+                            sx={{
+                              fontSize: { xs: "0.875rem", sm: "1rem" }
+                            }}
                           >
                             {attendanceSummary.attendanceRate.toFixed(0)}%
                           </Typography>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{
+                              fontSize: { xs: "0.75rem", sm: "0.875rem" }
+                            }}
+                          >
                             ({attendanceSummary.presentSessions}/
                             {attendanceSummary.totalSessions})
                           </Typography>
@@ -433,4 +534,6 @@ export default function NewSessionAttendanceTracker({
       `}</style>
     </Box>
   );
-}
+});
+
+export default NewSessionAttendanceTracker;

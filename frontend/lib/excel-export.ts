@@ -47,9 +47,21 @@ export function exportGroupsToExcel(groups: Group[]): void {
         "Fellowship",
         "Area",
         "Department",
+        "Session 1",
+        "Session 2",
+        "Session 3",
+        "Session 4",
+        "Session 5",
+        "Session 6",
+        "Notes",
       ]);
 
       group.participants.forEach((participant) => {
+        // Find session attendance data for this participant
+        const sessionData = group.sessionAttendanceParticipants?.find(
+          (sp) => sp.participant._id === participant._id
+        );
+
         groupData.push([
           participant.regNo || "",
           participant.name,
@@ -59,6 +71,13 @@ export function exportGroupsToExcel(groups: Group[]): void {
           participant.fellowshipName || "",
           participant.area || "",
           participant.department || "",
+          sessionData?.session1 || "unmarked",
+          sessionData?.session2 || "unmarked",
+          sessionData?.session3 || "unmarked",
+          sessionData?.session4 || "unmarked",
+          sessionData?.session5 || "unmarked",
+          sessionData?.session6 || "unmarked",
+          sessionData?.notes || "",
         ]);
       });
 
@@ -77,9 +96,21 @@ export function exportGroupsToExcel(groups: Group[]): void {
         "Fellowship",
         "Area",
         "Department",
+        "Session 1",
+        "Session 2",
+        "Session 3",
+        "Session 4",
+        "Session 5",
+        "Session 6",
+        "Notes",
       ]);
 
       group.volunteers.forEach((volunteer) => {
+        // Find session attendance data for this volunteer
+        const sessionData = group.sessionAttendanceParticipants?.find(
+          (sp) => sp.participant._id === volunteer._id
+        );
+
         groupData.push([
           volunteer.regNo || "",
           volunteer.name,
@@ -89,6 +120,13 @@ export function exportGroupsToExcel(groups: Group[]): void {
           volunteer.fellowshipName || "",
           volunteer.area || "",
           volunteer.department || "",
+          sessionData?.session1 || "unmarked",
+          sessionData?.session2 || "unmarked",
+          sessionData?.session3 || "unmarked",
+          sessionData?.session4 || "unmarked",
+          sessionData?.session5 || "unmarked",
+          sessionData?.session6 || "unmarked",
+          sessionData?.notes || "",
         ]);
       });
     }
@@ -106,6 +144,13 @@ export function exportGroupsToExcel(groups: Group[]): void {
       { wch: 20 }, // Fellowship
       { wch: 15 }, // Area
       { wch: 15 }, // Department
+      { wch: 12 }, // Session 1
+      { wch: 12 }, // Session 2
+      { wch: 12 }, // Session 3
+      { wch: 12 }, // Session 4
+      { wch: 12 }, // Session 5
+      { wch: 12 }, // Session 6
+      { wch: 30 }, // Notes
     ];
     worksheet["!cols"] = columnWidths;
 
@@ -273,9 +318,21 @@ export function exportAllTeamsToExcel(
           "Fellowship",
           "Area",
           "Department",
+          "Session 1",
+          "Session 2",
+          "Session 3",
+          "Session 4",
+          "Session 5",
+          "Session 6",
+          "Notes",
         ]);
 
         group.participants.forEach((participant) => {
+          // Find session attendance data for this participant
+          const sessionData = group.sessionAttendanceParticipants?.find(
+            (sp) => sp.participant._id === participant._id
+          );
+
           groupData.push([
             participant.regNo || "",
             participant.name,
@@ -285,6 +342,13 @@ export function exportAllTeamsToExcel(
             participant.fellowshipName || "",
             participant.area || "",
             participant.department || "",
+            sessionData?.session1 || "unmarked",
+            sessionData?.session2 || "unmarked",
+            sessionData?.session3 || "unmarked",
+            sessionData?.session4 || "unmarked",
+            sessionData?.session5 || "unmarked",
+            sessionData?.session6 || "unmarked",
+            sessionData?.notes || "",
           ]);
         });
 
@@ -302,9 +366,21 @@ export function exportAllTeamsToExcel(
           "Fellowship",
           "Area",
           "Department",
+          "Session 1",
+          "Session 2",
+          "Session 3",
+          "Session 4",
+          "Session 5",
+          "Session 6",
+          "Notes",
         ]);
 
         group.volunteers.forEach((volunteer) => {
+          // Find session attendance data for this volunteer
+          const sessionData = group.sessionAttendanceParticipants?.find(
+            (sp) => sp.participant._id === volunteer._id
+          );
+
           groupData.push([
             volunteer.regNo || "",
             volunteer.name,
@@ -314,20 +390,34 @@ export function exportAllTeamsToExcel(
             volunteer.fellowshipName || "",
             volunteer.area || "",
             volunteer.department || "",
+            sessionData?.session1 || "unmarked",
+            sessionData?.session2 || "unmarked",
+            sessionData?.session3 || "unmarked",
+            sessionData?.session4 || "unmarked",
+            sessionData?.session5 || "unmarked",
+            sessionData?.session6 || "unmarked",
+            sessionData?.notes || "",
           ]);
         });
       }
 
       const worksheet = XLSX.utils.aoa_to_sheet(groupData);
       worksheet["!cols"] = [
-        { wch: 15 },
-        { wch: 25 },
-        { wch: 15 },
-        { wch: 8 },
-        { wch: 10 },
-        { wch: 20 },
-        { wch: 15 },
-        { wch: 15 },
+        { wch: 15 }, // Registration No
+        { wch: 25 }, // Name
+        { wch: 15 }, // Contact
+        { wch: 8 }, // Age
+        { wch: 10 }, // Gender
+        { wch: 20 }, // Fellowship
+        { wch: 15 }, // Area
+        { wch: 15 }, // Department
+        { wch: 12 }, // Session 1
+        { wch: 12 }, // Session 2
+        { wch: 12 }, // Session 3
+        { wch: 12 }, // Session 4
+        { wch: 12 }, // Session 5
+        { wch: 12 }, // Session 6
+        { wch: 30 }, // Notes
       ];
 
       const sheetName = `Group_${group.name

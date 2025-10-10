@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Paper,
   Table,
@@ -84,7 +84,7 @@ interface ParticipantStatusCardProps {
   onUpdate: () => void;
 }
 
-function ParticipantStatusCard({
+const ParticipantStatusCard = React.memo(function ParticipantStatusCard({
   counsellingId,
   counsellingParticipant,
   onUpdate,
@@ -254,7 +254,7 @@ function ParticipantStatusCard({
       )}
     </Box>
   );
-}
+});
 
 export default function CounsellingClient({
   counsellings: initialCounsellings,
@@ -282,7 +282,7 @@ export default function CounsellingClient({
     message: string;
     severity: "success" | "error";
   }>({ open: false, message: "", severity: "success" });
-  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
 
   // Form state
   const [formData, setFormData] = useState({
@@ -568,15 +568,10 @@ export default function CounsellingClient({
   };
 
   const toggleCardExpanded = (counsellingId: string) => {
-    setExpandedCards((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(counsellingId)) {
-        newSet.delete(counsellingId);
-      } else {
-        newSet.add(counsellingId);
-      }
-      return newSet;
-    });
+    setExpandedCards((prev) => ({
+      ...prev,
+      [counsellingId]: !prev[counsellingId]
+    }));
   };
 
   const refreshCounsellingData = async () => {
@@ -608,25 +603,46 @@ export default function CounsellingClient({
   };
 
   return (
-    <Box sx={{ padding: 3 }}>
+    <Box sx={{ padding: { xs: 2, sm: 3 } }}>
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: { xs: "flex-start", sm: "center" },
           mb: 3,
+          flexDirection: { xs: "column", sm: "row" },
+          gap: { xs: 2, sm: 0 },
         }}
       >
-        <Typography variant="h4" component="h1">
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{
+            fontSize: { xs: "1.5rem", sm: "2.125rem" },
+            fontWeight: { xs: 500, sm: 400 },
+          }}
+        >
           Counselling Teams
         </Typography>
-        <Box sx={{ display: "flex", gap: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            gap: { xs: 1, sm: 2 },
+            flexDirection: { xs: "column", sm: "row" },
+            width: { xs: "100%", sm: "auto" },
+          }}
+        >
           <Button
             variant="outlined"
             startIcon={<FileDownloadIcon />}
             onClick={handleExportCounselling}
-            size="large"
+            size="medium"
             disabled={counsellings.length === 0}
+            sx={{
+              fontSize: { xs: "0.875rem", sm: "1rem" },
+              padding: { xs: "8px 16px", sm: "10px 20px" },
+              width: { xs: "100%", sm: "auto" },
+            }}
           >
             Export Excel
           </Button>
@@ -637,7 +653,12 @@ export default function CounsellingClient({
               resetForm();
               setOpenCreateDialog(true);
             }}
-            size="large"
+            size="medium"
+            sx={{
+              fontSize: { xs: "0.875rem", sm: "1rem" },
+              padding: { xs: "8px 16px", sm: "10px 20px" },
+              width: { xs: "100%", sm: "auto" },
+            }}
           >
             Create Team
           </Button>
@@ -674,7 +695,7 @@ export default function CounsellingClient({
           {counsellings.map((counselling) => (
             <Grid item xs={12} key={counselling._id}>
               <Accordion
-                expanded={expandedCards.has(counselling._id)}
+                expanded={!!expandedCards[counselling._id]}
                 onChange={() => toggleCardExpanded(counselling._id)}
                 sx={{
                   boxShadow: 2,
@@ -687,8 +708,14 @@ export default function CounsellingClient({
                   expandIcon={<ExpandMoreIcon />}
                   sx={{
                     cursor: "pointer",
+                    px: { xs: 2, sm: 3 },
+                    py: { xs: 1.5, sm: 2 },
                     "& .MuiAccordionSummary-content": {
-                      alignItems: "center",
+                      alignItems: { xs: "flex-start", sm: "center" },
+                      margin: { xs: "8px 0", sm: "12px 0" },
+                    },
+                    "& .MuiAccordionSummary-expandIconWrapper": {
+                      color: "primary.main",
                     },
                   }}
                 >
@@ -696,63 +723,91 @@ export default function CounsellingClient({
                     sx={{
                       display: "flex",
                       justifyContent: "space-between",
-                      alignItems: "center",
+                      alignItems: { xs: "flex-start", sm: "center" },
                       width: "100%",
+                      flexDirection: { xs: "column", sm: "row" },
+                      gap: { xs: 2, sm: 0 },
                     }}
                   >
                     <Box
                       sx={{
                         display: "flex",
-                        alignItems: "center",
-                        gap: 2,
+                        alignItems: { xs: "flex-start", sm: "center" },
+                        gap: { xs: 1, sm: 2 },
                         flex: 1,
+                        flexDirection: { xs: "column", sm: "row" },
+                        width: { xs: "100%", sm: "auto" },
                       }}
                     >
-                      <Typography variant="h6" component="h2">
+                      <Typography
+                        variant="h6"
+                        component="h2"
+                        sx={{
+                          fontWeight: { xs: 500, sm: 600 },
+                          fontSize: { xs: "1rem", sm: "1.25rem" }
+                        }}
+                      >
                         {counselling.name}
                       </Typography>
-                      <Chip
-                        label={statusLabels[counselling.status]}
-                        color={statusColors[counselling.status]}
-                        size="small"
-                      />
-                      <Chip
-                        label={`${counselling.counsellor.name} (Counsellor)`}
-                        color="primary"
-                        variant="outlined"
-                        size="small"
-                      />
-                      <Chip
-                        label={`${
-                          counselling.participants?.length || 0
-                        } participants`}
-                        color="secondary"
-                        variant="outlined"
-                        size="small"
-                      />
-                      {/* Progress indicator */}
-                      {counselling.participants &&
-                        counselling.participants.length > 0 && (
-                          <Chip
-                            label={`${
-                              counselling.participants.filter(
-                                (p) => p.status === "done"
-                              ).length
-                            }/${counselling.participants.length} done`}
-                            color={
-                              counselling.participants.filter(
-                                (p) => p.status === "done"
-                              ).length === counselling.participants.length
-                                ? "success"
-                                : "warning"
-                            }
-                            size="small"
-                          />
-                        )}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          gap: 1,
+                          flexWrap: "wrap",
+                          width: { xs: "100%", sm: "auto" },
+                        }}
+                      >
+                        <Chip
+                          label={statusLabels[counselling.status]}
+                          color={statusColors[counselling.status]}
+                          size="small"
+                          sx={{ fontSize: { xs: "0.7rem", sm: "0.8125rem" } }}
+                        />
+                        <Chip
+                          label={`${counselling.counsellor.name} (Counsellor)`}
+                          color="primary"
+                          variant="outlined"
+                          size="small"
+                          sx={{ fontSize: { xs: "0.7rem", sm: "0.8125rem" } }}
+                        />
+                        <Chip
+                          label={`${
+                            counselling.participants?.length || 0
+                          } participants`}
+                          color="secondary"
+                          variant="outlined"
+                          size="small"
+                          sx={{ fontSize: { xs: "0.7rem", sm: "0.8125rem" } }}
+                        />
+                        {/* Progress indicator */}
+                        {counselling.participants &&
+                          counselling.participants.length > 0 && (
+                            <Chip
+                              label={`${
+                                counselling.participants.filter(
+                                  (p) => p.status === "done"
+                                ).length
+                              }/${counselling.participants.length} done`}
+                              color={
+                                counselling.participants.filter(
+                                  (p) => p.status === "done"
+                                ).length === counselling.participants.length
+                                  ? "success"
+                                  : "warning"
+                              }
+                              size="small"
+                              sx={{ fontSize: { xs: "0.7rem", sm: "0.8125rem" } }}
+                            />
+                          )}
+                      </Box>
                     </Box>
                     <Box
-                      sx={{ display: "flex", gap: 1 }}
-                      onClick={(e) => e.stopPropagation()}
+                      sx={{
+                        display: "flex",
+                        gap: 1,
+                        alignSelf: { xs: "flex-end", sm: "center" },
+                        mt: { xs: 0, sm: 0 },
+                      }}
                     >
                       <IconButton
                         size="small"
@@ -761,28 +816,32 @@ export default function CounsellingClient({
                           openEditCounsellingDialog(counselling);
                         }}
                         title="Edit Team"
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openDeleteCounsellingDialog(counselling);
+                        sx={{
+                          padding: { xs: 1, sm: 1 },
                         }}
-                        title="Delete Team"
-                        color="error"
                       >
-                        <DeleteIcon />
+                        <EditIcon sx={{ fontSize: { xs: "1.2rem", sm: "1.5rem" } }} />
                       </IconButton>
                     </Box>
                   </Box>
                 </AccordionSummary>
 
-                <AccordionDetails>
+                <AccordionDetails
+                  sx={{
+                    px: { xs: 2, sm: 3 },
+                    pb: { xs: 2, sm: 3 },
+                  }}
+                >
                   <Box>
                     {counselling.description && (
-                      <Typography color="text.secondary" sx={{ mb: 3 }}>
+                      <Typography
+                        color="text.secondary"
+                        sx={{
+                          mb: 3,
+                          fontSize: { xs: "0.9rem", sm: "1rem" },
+                          lineHeight: { xs: 1.4, sm: 1.5 },
+                        }}
+                      >
                         {counselling.description}
                       </Typography>
                     )}

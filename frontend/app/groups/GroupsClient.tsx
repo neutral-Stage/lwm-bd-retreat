@@ -67,7 +67,8 @@ export default function GroupsClient({
     message: string;
     severity: "success" | "error";
   }>({ open: false, message: "", severity: "success" });
-  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
+  const [expandedAttendance, setExpandedAttendance] = useState<Record<string, boolean>>({});
 
   // Form state
   const [formData, setFormData] = useState({
@@ -268,15 +269,17 @@ export default function GroupsClient({
   };
 
   const toggleCardExpanded = (groupId: string) => {
-    setExpandedCards((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(groupId)) {
-        newSet.delete(groupId);
-      } else {
-        newSet.add(groupId);
-      }
-      return newSet;
-    });
+    setExpandedCards((prev) => ({
+      ...prev,
+      [groupId]: !prev[groupId]
+    }));
+  };
+
+  const toggleAttendanceExpanded = (groupId: string) => {
+    setExpandedAttendance((prev) => ({
+      ...prev,
+      [groupId]: !prev[groupId]
+    }));
   };
 
   const handleDataRefresh = async () => {
@@ -313,25 +316,46 @@ export default function GroupsClient({
   };
 
   return (
-    <Box sx={{ padding: 3 }}>
+    <Box sx={{ padding: { xs: 2, sm: 3 } }}>
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: { xs: "flex-start", sm: "center" },
           mb: 3,
+          flexDirection: { xs: "column", sm: "row" },
+          gap: { xs: 2, sm: 0 },
         }}
       >
-        <Typography variant="h4" component="h1">
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{
+            fontSize: { xs: "1.5rem", sm: "2.125rem" },
+            fontWeight: { xs: 500, sm: 400 },
+          }}
+        >
           Groups Management
         </Typography>
-        <Box sx={{ display: "flex", gap: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            gap: { xs: 1, sm: 2 },
+            flexDirection: { xs: "column", sm: "row" },
+            width: { xs: "100%", sm: "auto" },
+          }}
+        >
           <Button
             variant="outlined"
             startIcon={<FileDownloadIcon />}
             onClick={handleExportGroups}
-            size="large"
+            size="medium"
             disabled={groups.length === 0}
+            sx={{
+              fontSize: { xs: "0.875rem", sm: "1rem" },
+              padding: { xs: "8px 16px", sm: "10px 20px" },
+              width: { xs: "100%", sm: "auto" },
+            }}
           >
             Export Excel
           </Button>
@@ -339,7 +363,12 @@ export default function GroupsClient({
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => setOpenCreateDialog(true)}
-            size="large"
+            size="medium"
+            sx={{
+              fontSize: { xs: "0.875rem", sm: "1rem" },
+              padding: { xs: "8px 16px", sm: "10px 20px" },
+              width: { xs: "100%", sm: "auto" },
+            }}
           >
             Create Group
           </Button>
@@ -371,21 +400,28 @@ export default function GroupsClient({
           {groups.map((group) => (
             <Grid item xs={12} key={group._id}>
               <Accordion
-                expanded={expandedCards.has(group._id)}
+                expanded={!!expandedCards[group._id]}
                 onChange={() => toggleCardExpanded(group._id)}
                 sx={{
                   boxShadow: 2,
                   "&:before": { display: "none" },
                   borderRadius: 2,
                   mb: 1,
+                  overflow: "hidden",
                 }}
               >
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon />}
                   sx={{
                     cursor: "pointer",
+                    px: { xs: 2, sm: 3 },
+                    py: { xs: 1.5, sm: 2 },
                     "& .MuiAccordionSummary-content": {
-                      alignItems: "center",
+                      alignItems: { xs: "flex-start", sm: "center" },
+                      margin: { xs: "8px 0", sm: "12px 0" },
+                    },
+                    "& .MuiAccordionSummary-expandIconWrapper": {
+                      color: "primary.main",
                     },
                   }}
                 >
@@ -393,22 +429,40 @@ export default function GroupsClient({
                     sx={{
                       display: "flex",
                       justifyContent: "space-between",
-                      alignItems: "center",
+                      alignItems: { xs: "flex-start", sm: "center" },
                       width: "100%",
+                      flexDirection: { xs: "column", sm: "row" },
+                      gap: { xs: 2, sm: 0 },
                     }}
                   >
                     <Box
                       sx={{
                         display: "flex",
-                        alignItems: "center",
-                        gap: 2,
+                        alignItems: { xs: "flex-start", sm: "center" },
+                        gap: { xs: 1, sm: 2 },
                         flex: 1,
+                        flexDirection: { xs: "column", sm: "row" },
+                        width: { xs: "100%", sm: "auto" },
                       }}
                     >
-                      <Typography variant="h6" component="h2">
+                      <Typography
+                        variant="h6"
+                        component="h2"
+                        sx={{
+                          fontWeight: { xs: 500, sm: 600 },
+                          fontSize: { xs: "1rem", sm: "1.25rem" }
+                        }}
+                      >
                         {group.name}
                       </Typography>
-                      <Box sx={{ display: "flex", gap: 1 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          gap: 1,
+                          flexWrap: "wrap",
+                          width: { xs: "100%", sm: "auto" },
+                        }}
+                      >
                         <Chip
                           icon={<PeopleIcon />}
                           label={`${
@@ -417,6 +471,7 @@ export default function GroupsClient({
                           color="primary"
                           variant="outlined"
                           size="small"
+                          sx={{ fontSize: { xs: "0.7rem", sm: "0.8125rem" } }}
                         />
                         <Chip
                           icon={<PersonAddIcon />}
@@ -424,10 +479,18 @@ export default function GroupsClient({
                           color="secondary"
                           variant="outlined"
                           size="small"
+                          sx={{ fontSize: { xs: "0.7rem", sm: "0.8125rem" } }}
                         />
                       </Box>
                     </Box>
-                    <Box sx={{ display: "flex", gap: 1 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        gap: 1,
+                        alignSelf: { xs: "flex-end", sm: "center" },
+                        mt: { xs: 0, sm: 0 },
+                      }}
+                    >
                       <IconButton
                         size="small"
                         onClick={(e) => {
@@ -435,103 +498,130 @@ export default function GroupsClient({
                           openEditGroupDialog(group);
                         }}
                         title="Edit Group"
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openDeleteGroupDialog(group);
+                        sx={{
+                          padding: { xs: 1, sm: 1 },
                         }}
-                        title="Delete Group"
-                        color="error"
                       >
-                        <DeleteIcon />
+                        <EditIcon sx={{ fontSize: { xs: "1.2rem", sm: "1.5rem" } }} />
                       </IconButton>
                     </Box>
                   </Box>
                 </AccordionSummary>
 
-                <AccordionDetails>
+                <AccordionDetails
+                  sx={{
+                    px: { xs: 2, sm: 3 },
+                    pb: { xs: 2, sm: 3 },
+                  }}
+                >
                   <Box>
                     {group.description && (
-                      <Typography color="text.secondary" sx={{ mb: 3 }}>
+                      <Typography
+                        color="text.secondary"
+                        sx={{
+                          mb: 3,
+                          fontSize: { xs: "0.9rem", sm: "1rem" },
+                          lineHeight: { xs: 1.4, sm: 1.5 },
+                        }}
+                      >
                         {group.description}
                       </Typography>
                     )}
 
-                    <Accordion>
-                      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="subtitle2">
-                          View Members
-                        </Typography>
-                      </AccordionSummary>
-                      <AccordionDetails>
-                        {group.participants &&
-                          group.participants.length > 0 && (
-                            <Box sx={{ mb: 2 }}>
-                              <Typography
-                                variant="subtitle2"
-                                color="primary"
-                                gutterBottom
-                              >
-                                Participants
-                              </Typography>
-                              {group.participants.map((participant) => (
-                                <Chip
-                                  key={participant._id}
-                                  label={participant.name}
-                                  size="small"
-                                  sx={{ mr: 1, mb: 1 }}
-                                />
-                              ))}
-                            </Box>
-                          )}
+                    {/* Members Section */}
+                    <Box sx={{ mb: 3 }}>
+                      <Typography
+                        variant="subtitle1"
+                        color="primary"
+                        gutterBottom
+                        sx={{ fontWeight: 600, mb: 2 }}
+                      >
+                        Group Members
+                      </Typography>
 
-                        {group.volunteers && group.volunteers.length > 0 && (
-                          <Box>
-                            <Typography
-                              variant="subtitle2"
-                              color="secondary"
-                              gutterBottom
-                            >
-                              Volunteers
-                            </Typography>
+                      {group.participants && group.participants.length > 0 && (
+                        <Box sx={{ mb: 2 }}>
+                          <Typography
+                            variant="subtitle2"
+                            color="primary"
+                            gutterBottom
+                            sx={{ fontSize: "0.875rem" }}
+                          >
+                            Participants ({group.participants.length})
+                          </Typography>
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                            {group.participants.map((participant) => (
+                              <Chip
+                                key={participant._id}
+                                label={participant.name}
+                                size="small"
+                                variant="outlined"
+                              />
+                            ))}
+                          </Box>
+                        </Box>
+                      )}
+
+                      {group.volunteers && group.volunteers.length > 0 && (
+                        <Box sx={{ mb: 2 }}>
+                          <Typography
+                            variant="subtitle2"
+                            color="secondary"
+                            gutterBottom
+                            sx={{ fontSize: "0.875rem" }}
+                          >
+                            Volunteers ({group.volunteers.length})
+                          </Typography>
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                             {group.volunteers.map((volunteer) => (
                               <Chip
                                 key={volunteer._id}
                                 label={volunteer.name}
                                 size="small"
                                 color="secondary"
-                                sx={{ mr: 1, mb: 1 }}
+                                variant="outlined"
                               />
                             ))}
                           </Box>
+                        </Box>
+                      )}
+
+                      {(!group.participants || group.participants.length === 0) &&
+                        (!group.volunteers || group.volunteers.length === 0) && (
+                          <Typography color="text.secondary" variant="body2">
+                            No members assigned to this group yet.
+                          </Typography>
                         )}
+                    </Box>
 
-                        {(!group.participants ||
-                          group.participants.length === 0) &&
-                          (!group.volunteers ||
-                            group.volunteers.length === 0) && (
-                            <Typography color="text.secondary" variant="body2">
-                              No members assigned to this group yet.
-                            </Typography>
-                          )}
-                      </AccordionDetails>
-                    </Accordion>
-
-                    <Accordion>
-                      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="subtitle2">
-                          Session Attendance
+                    {/* Attendance Section with Lazy Loading */}
+                    <Accordion
+                      expanded={!!expandedAttendance[group._id]}
+                      onChange={() => toggleAttendanceExpanded(group._id)}
+                      sx={{
+                        boxShadow: 1,
+                        "&:before": { display: "none" },
+                        borderRadius: 1
+                      }}
+                    >
+                      <AccordionSummary
+                        expandIcon={<ExpandMoreIcon />}
+                        sx={{
+                          backgroundColor: "rgba(0, 0, 0, 0.02)",
+                          "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.04)" }
+                        }}
+                      >
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                          Session Attendance Tracker
                         </Typography>
                       </AccordionSummary>
-                      <AccordionDetails>
-                        <NewSessionAttendanceTracker
-                          group={group}
-                          onDataUpdate={handleDataRefresh}
-                        />
+                      <AccordionDetails sx={{ p: 0 }}>
+                        {expandedAttendance[group._id] && (
+                          <NewSessionAttendanceTracker
+                            group={group}
+                            onDataUpdate={handleDataRefresh}
+                          />
+                        )}
                       </AccordionDetails>
                     </Accordion>
                   </Box>
