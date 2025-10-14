@@ -36,6 +36,9 @@ import Snackbar from "@mui/material/Snackbar";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
+import Stack from "@mui/material/Stack";
 import { Participant } from "../../types";
 import { updateParticipant, deleteParticipant } from "../../lib/data-fetching";
 import { exportFilteredParticipantsToExcel } from "../../lib/excel-export";
@@ -48,6 +51,8 @@ interface ParticipantListProps {
 export default function ParticipantList({
   participants,
 }: ParticipantListProps) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [statusFilter, setStatusFilter] = useState("all");
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [fellowshipFilter, setFellowshipFilter] = useState("all");
@@ -259,6 +264,134 @@ export default function ParticipantList({
         }, {} as Record<string, Participant[]>)
       : { "All Participants": filteredParticipants };
 
+  // Mobile Participant Card Component
+  const MobileParticipantCard = ({
+    participant,
+  }: {
+    participant: Participant;
+  }) => {
+    return (
+      <Card sx={{ mb: 2 }}>
+        <CardContent>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              mb: 2,
+            }}
+          >
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h6" gutterBottom>
+                {participant.name}
+              </Typography>
+              <Chip
+                label={participant.regNo}
+                size="small"
+                color={
+                  participant.department === "volunteer" ? "primary" : "default"
+                }
+                sx={{ mr: 1 }}
+              />
+              <Chip
+                label={participant.present}
+                size="small"
+                color={participant.present === "present" ? "success" : "error"}
+              />
+            </Box>
+            <Box sx={{ display: "flex", gap: 0.5 }}>
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={() => handleEdit(participant)}
+                title="Edit participant"
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => handleDelete(participant)}
+                title="Delete participant"
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          </Box>
+
+          <Divider sx={{ my: 1.5 }} />
+
+          <Grid container spacing={1.5}>
+            <Grid item xs={6}>
+              <Typography variant="caption" color="text.secondary">
+                Gender
+              </Typography>
+              <Box sx={{ mt: 0.5 }}>
+                <Chip
+                  label={participant.gender}
+                  size="small"
+                  color={participant.gender === "male" ? "info" : "secondary"}
+                />
+              </Box>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="caption" color="text.secondary">
+                Age
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 0.5 }}>
+                {participant.age || "N/A"}
+              </Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="caption" color="text.secondary">
+                Department
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 0.5 }}>
+                {participant.department}
+              </Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="caption" color="text.secondary">
+                Fellowship
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 0.5 }}>
+                {participant.fellowshipName}
+              </Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="caption" color="text.secondary">
+                Area
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 0.5 }}>
+                {participant.area || "N/A"}
+              </Typography>
+            </Grid>
+            {participant.guardianName && (
+              <>
+                <Grid item xs={12}>
+                  <Typography variant="caption" color="text.secondary">
+                    Guardian Name
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 0.5 }}>
+                    {participant.guardianName}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="caption" color="text.secondary">
+                    Guardian Contact
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 0.5 }}>
+                    {participant.guardianContact || "N/A"}
+                  </Typography>
+                </Grid>
+              </>
+            )}
+          </Grid>
+        </CardContent>
+      </Card>
+    );
+  };
+
   // Edit Participant Form Component
   const EditParticipantForm = ({
     participant,
@@ -415,22 +548,27 @@ export default function ParticipantList({
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 2, sm: 3 } }}>
       <Box
         sx={{
           display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: { xs: "flex-start", sm: "center" },
+          gap: 2,
           mb: 2,
         }}
       >
-        <Typography variant="h4">Participant Management System</Typography>
+        <Typography variant={isMobile ? "h5" : "h4"}>
+          Participant Management System
+        </Typography>
         <Button
           variant="contained"
           onClick={handleExportToXLSX}
-          size="large"
+          size={isMobile ? "medium" : "large"}
           startIcon={<FileDownloadIcon />}
           disabled={filteredParticipants.length === 0}
+          fullWidth={isMobile}
         >
           Export Filtered ({filteredParticipants.length})
         </Button>
@@ -640,87 +778,100 @@ export default function ParticipantList({
               </Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <TableContainer component={Paper}>
-                <Table stickyHeader>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Reg No</TableCell>
-                      <TableCell>Name</TableCell>
-                      <TableCell>Gender</TableCell>
-                      <TableCell>Department</TableCell>
-                      <TableCell>Fellowship</TableCell>
-                      <TableCell>Area</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Age</TableCell>
-                      <TableCell>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {groupParticipants.map((participant) => (
-                      <TableRow key={participant.regNo || participant._id}>
-                        <TableCell>
-                          <Chip
-                            label={participant.regNo}
-                            color={
-                              participant.department === "volunteer"
-                                ? "primary"
-                                : "default"
-                            }
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>{participant.name}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={participant.gender}
-                            color={
-                              participant.gender === "male"
-                                ? "info"
-                                : "secondary"
-                            }
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>{participant.department}</TableCell>
-                        <TableCell>{participant.fellowshipName}</TableCell>
-                        <TableCell>{participant.area || "N/A"}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={participant.present}
-                            color={
-                              participant.present === "present"
-                                ? "success"
-                                : "error"
-                            }
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>{participant.age || "N/A"}</TableCell>
-                        <TableCell>
-                          <Box sx={{ display: "flex", gap: 1 }}>
-                            <IconButton
-                              size="small"
-                              color="primary"
-                              onClick={() => handleEdit(participant)}
-                              title="Edit participant"
-                            >
-                              <EditIcon />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() => handleDelete(participant)}
-                              title="Delete participant"
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </Box>
-                        </TableCell>
+              {isMobile ? (
+                // Mobile: Card-based layout
+                <Box>
+                  {groupParticipants.map((participant) => (
+                    <MobileParticipantCard
+                      key={participant.regNo || participant._id}
+                      participant={participant}
+                    />
+                  ))}
+                </Box>
+              ) : (
+                // Desktop: Table layout
+                <TableContainer component={Paper} sx={{ overflowX: "auto" }}>
+                  <Table stickyHeader>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Reg No</TableCell>
+                        <TableCell>Name</TableCell>
+                        <TableCell>Gender</TableCell>
+                        <TableCell>Department</TableCell>
+                        <TableCell>Fellowship</TableCell>
+                        <TableCell>Area</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell>Age</TableCell>
+                        <TableCell>Actions</TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                    </TableHead>
+                    <TableBody>
+                      {groupParticipants.map((participant) => (
+                        <TableRow key={participant.regNo || participant._id}>
+                          <TableCell>
+                            <Chip
+                              label={participant.regNo}
+                              color={
+                                participant.department === "volunteer"
+                                  ? "primary"
+                                  : "default"
+                              }
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell>{participant.name}</TableCell>
+                          <TableCell>
+                            <Chip
+                              label={participant.gender}
+                              color={
+                                participant.gender === "male"
+                                  ? "info"
+                                  : "secondary"
+                              }
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell>{participant.department}</TableCell>
+                          <TableCell>{participant.fellowshipName}</TableCell>
+                          <TableCell>{participant.area || "N/A"}</TableCell>
+                          <TableCell>
+                            <Chip
+                              label={participant.present}
+                              color={
+                                participant.present === "present"
+                                  ? "success"
+                                  : "error"
+                              }
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell>{participant.age || "N/A"}</TableCell>
+                          <TableCell>
+                            <Box sx={{ display: "flex", gap: 1 }}>
+                              <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={() => handleEdit(participant)}
+                                title="Edit participant"
+                              >
+                                <EditIcon />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => handleDelete(participant)}
+                                title="Delete participant"
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </Box>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
             </AccordionDetails>
           </Accordion>
         )
