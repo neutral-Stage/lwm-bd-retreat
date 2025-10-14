@@ -8,11 +8,11 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import { Divider, Typography } from "@mui/material";
-import MenuItem from "@mui/material/MenuItem";
-import Select, { SelectChangeEvent } from "@mui/material/Select";
+import { Divider, Typography, TextField, Box } from "@mui/material";
+import Autocomplete from "@mui/material/Autocomplete";
+import { useRouter } from "next/navigation";
 // Removed static fellowship import - now using dynamic grouping
-import { updateParticipant } from "../../lib/data-fetching";
+import { updateParticipantRoom } from "../../lib/data-fetching";
 import { Participant, Room } from "../../types/index";
 import { useAppContext, actions } from "../../contexts/AppContext";
 
@@ -20,77 +20,70 @@ interface RoomSelectionProps {
   value?: string;
   room: Room[];
   id: string;
-  updateRoom: (id: string) => void;
-  updateParticipant: (targetId: string, participantId: string) => void;
-  diselection: (roomId: string, participantId: string) => void;
+  participantId: string;
+  onRoomUpdate: () => void;
 }
 
 const RoomSelection = ({
   value,
   room,
   id,
-  updateRoom,
-  updateParticipant: updateParticipantLocal,
-  diselection,
+  participantId,
+  onRoomUpdate,
 }: RoomSelectionProps) => {
-  const [selected, setSelected] = useState(value ?? "none");
+  const [loading, setLoading] = useState(false);
 
-  const handleChangeRoom = async (
-    e: SelectChangeEvent<string>,
-    participantId: string
-  ) => {
-    const targetValue = e.target.value as string;
-    setSelected(targetValue);
+  // Find the selected room or set to null
+  const selectedRoom = value ? room.find((r) => r._id === value) : null;
 
-    if (targetValue && targetValue === "none") {
-      if (value) {
-        diselection(value, participantId);
+  const handleChangeRoom = async (event: any, newValue: Room | null) => {
+    const previousValue = selectedRoom;
+    setLoading(true);
+
+    try {
+      if (!newValue) {
+        // Remove room assignment
+        await updateParticipantRoom(participantId, null);
+      } else {
+        // Assign to new room using the room ID as reference
+        await updateParticipantRoom(participantId, newValue._id);
       }
 
-      try {
-        await updateParticipant(participantId, { roomNo: undefined });
-      } catch (error) {
-        console.error("Failed to remove room assignment:", error);
-        // Revert on error
-        setSelected(value ?? "none");
-      }
-    }
-
-    if (targetValue && targetValue !== "none") {
-      updateRoom(targetValue);
-      updateParticipantLocal(targetValue, participantId);
-
-      try {
-        const targetRoom = room.find((r) => r._id === targetValue);
-        await updateParticipant(participantId, {
-          roomNo: { roomNo: targetRoom?.roomNo || "" },
-        });
-      } catch (error) {
-        console.error("Failed to update room assignment:", error);
-        // Revert on error
-        setSelected(value ?? "none");
-      }
+      // Trigger refresh to get updated data from server
+      onRoomUpdate();
+    } catch (error) {
+      console.error("Failed to update room assignment:", error);
+      alert("Failed to update room assignment. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <Select
-      labelId="room-select-label"
-      id="room-select"
-      label="Room Selection"
-      name="roomSelection"
-      value={selected}
-      onChange={(e) => handleChangeRoom(e, id)}
+    <Autocomplete
       size="small"
-    >
-      <MenuItem value="none">No Room Selected</MenuItem>
-      {room.map((r) => (
-        <MenuItem key={r._id} value={r._id} disabled={r.capacity === r.booked}>
-          Room No: {r.roomNo}, Capacity: {r.capacity}, Available:{" "}
-          {r.capacity - r.booked}
-        </MenuItem>
-      ))}
-    </Select>
+      value={selectedRoom}
+      onChange={handleChangeRoom}
+      options={room}
+      getOptionLabel={(option) =>
+        `Room ${option.roomNo} - Capacity: ${option.capacity}, Available: ${
+          option.capacity - option.booked
+        }`
+      }
+      getOptionDisabled={(option) => option.capacity === option.booked}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Select Room"
+          placeholder="Search room..."
+        />
+      )}
+      disabled={loading}
+      isOptionEqualToValue={(option, value) =>
+        value ? option._id === value._id : false
+      }
+      sx={{ minWidth: 250 }}
+    />
   );
 };
 
@@ -103,12 +96,11 @@ export default function RoomClient({
   participants: initialParticipants,
   rooms: initialRooms,
 }: RoomClientProps) {
-  const { state, dispatch } = useAppContext();
+  const router = useRouter();
 
-  // Use context state or fallback to initial data
-  const participantState =
-    state.participants.length > 0 ? state.participants : initialParticipants;
-  const roomState = state.rooms.length > 0 ? state.rooms : initialRooms;
+  // Use server data directly (no context needed for room management)
+  const participantState = initialParticipants;
+  const roomState = initialRooms;
 
   const totalCapacity = roomState?.reduce(
     (previousValue, currentValue) => previousValue + currentValue.capacity,
@@ -120,65 +112,9 @@ export default function RoomClient({
     0
   );
 
-  const updateParticipantRoom = (
-    targetRoomId: string,
-    participantId: string
-  ) => {
-    const findRoom = roomState.find((obj) => obj._id === targetRoomId);
-    if (!findRoom) return;
-
-    const updatedParticipants = participantState.map((obj) => {
-      if (obj._id === participantId) {
-        return {
-          ...obj,
-          room: findRoom.roomNo,
-          roomNo: {
-            roomNo: findRoom.roomNo,
-          },
-        };
-      }
-      return obj;
-    });
-
-    // Update context state
-    updatedParticipants.forEach((participant) => {
-      if (participant._id === participantId) {
-        dispatch(actions.updateParticipant(participant));
-      }
-    });
-  };
-
-  const updateRoomBooking = (roomId: string) => {
-    const updatedRoom = roomState.find((room) => room._id === roomId);
-    if (updatedRoom) {
-      dispatch(
-        actions.updateRoom({ ...updatedRoom, booked: updatedRoom.booked + 1 })
-      );
-    }
-  };
-
-  const diselection = (roomId: string, participantId: string) => {
-    // Update room booking count
-    const targetRoom = roomState.find((room) => room._id === roomId);
-    if (targetRoom && targetRoom.booked > 0) {
-      dispatch(
-        actions.updateRoom({ ...targetRoom, booked: targetRoom.booked - 1 })
-      );
-    }
-
-    // Update participant room assignment
-    const targetParticipant = participantState.find(
-      (p) => p._id === participantId
-    );
-    if (targetParticipant) {
-      dispatch(
-        actions.updateParticipant({
-          ...targetParticipant,
-          room: undefined,
-          roomNo: undefined,
-        })
-      );
-    }
+  // Handle room update by refreshing the page data
+  const handleRoomUpdate = () => {
+    router.refresh();
   };
 
   // Filter participants to only include females and children (exclude males)
@@ -344,19 +280,20 @@ export default function RoomClient({
                     </TableCell>
                     <TableCell align="right">{row.age || "N/A"}</TableCell>
                     <TableCell align="right">{row.present || ""}</TableCell>
-                    <TableCell align="right">{row.room || ""}</TableCell>
+                    <TableCell align="right">
+                      {typeof row.roomNo === "string"
+                        ? row.roomNo
+                        : typeof row.roomNo === "object" && row.roomNo?.roomNo
+                        ? row.roomNo.roomNo
+                        : ""}
+                    </TableCell>
                     <TableCell align="right">
                       <RoomSelection
-                        value={
-                          typeof row?.roomNo === "object"
-                            ? row?.roomNo?.roomNo
-                            : row?.roomNo
-                        }
+                        value={row.roomRef || undefined}
                         room={roomState}
                         id={row._id}
-                        updateParticipant={updateParticipantRoom}
-                        updateRoom={updateRoomBooking}
-                        diselection={diselection}
+                        participantId={row._id}
+                        onRoomUpdate={handleRoomUpdate}
                       />
                     </TableCell>
                   </TableRow>

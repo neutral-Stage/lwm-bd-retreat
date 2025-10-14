@@ -70,6 +70,7 @@ export async function getAllParticipants(): Promise<Participant[]> {
         salvationDate,
         age,
         "roomNo": roomNo->roomNo,
+        "roomRef": roomNo._ref,
         _createdAt
       } | order(_createdAt desc)`,
       {},
@@ -1843,7 +1844,9 @@ export function isValidBaptized(data: any): data is Baptized {
 }
 
 // Get participants available for baptism (not already in baptized list)
-export async function getAvailableBaptismParticipants(): Promise<Participant[]> {
+export async function getAvailableBaptismParticipants(): Promise<
+  Participant[]
+> {
   try {
     const participants = await client.fetch(
       `*[_type == "participant" && present == "present" && !(
@@ -1874,7 +1877,9 @@ export async function getAvailableBaptismParticipants(): Promise<Participant[]> 
 }
 
 // Get baptized participants by status
-export async function getBaptizedByStatus(status: "done" | "pending"): Promise<Baptized[]> {
+export async function getBaptizedByStatus(
+  status: "done" | "pending"
+): Promise<Baptized[]> {
   try {
     const baptized = await client.fetch(
       `*[_type == "baptized" && status == $status] | order(createdAt desc) {

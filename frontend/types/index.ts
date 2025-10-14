@@ -27,6 +27,7 @@ export interface Participant {
       }
     | string
     | null;
+  roomRef?: string | null; // The room reference ID for matching with room dropdown
 }
 
 export interface Room {
