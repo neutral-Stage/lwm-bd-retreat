@@ -121,6 +121,7 @@ export interface CounsellingParticipant {
   status: "done" | "pending";
   comments: string;
   _id?: string; // For tracking individual counselling participant records
+  _key?: string; // Sanity array item key for proper updates
 }
 
 export interface Counselling {

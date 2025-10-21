@@ -461,17 +461,40 @@ export default function CounsellingClient({
 
     setLoading(true);
     try {
+      // Preserve existing participant data (status and comments) when updating
+      const existingParticipants = selectedCounselling.participants || [];
+      const updatedParticipants = formData.participants.map((p) => {
+        // Check if this participant already exists in the counselling team
+        const existingEntry = existingParticipants.find(
+          (existing) => existing.participant._id === p._id
+        );
+
+        if (existingEntry) {
+          // Preserve existing status and comments
+          return {
+            participant: p,
+            status: existingEntry.status,
+            comments: existingEntry.comments,
+            _id: existingEntry._id, // Preserve the existing record ID
+            _key: existingEntry._key, // Preserve the existing Sanity array key
+          };
+        } else {
+          // New participant - use default values
+          return {
+            participant: p,
+            status: "pending" as const,
+            comments: "",
+          };
+        }
+      });
+
       const updatedCounselling = await updateCounselling(
         selectedCounselling._id,
         {
           name: formData.name,
           description: formData.description,
           counsellor: formData.counsellor,
-          participants: formData.participants.map((p) => ({
-            participant: p,
-            status: "pending" as const,
-            comments: "",
-          })) as any, // Temporary type assertion for backward compatibility
+          participants: updatedParticipants as any, // Temporary type assertion for backward compatibility
           meetingSchedule: formData.meetingSchedule,
           location: formData.location,
           status: formData.status,

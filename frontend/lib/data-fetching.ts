@@ -1088,22 +1088,25 @@ export async function updateCounselling(
         "participant" in updates.participants[0]
       ) {
         updateData.counsellingParticipants = updates.participants.map(
-          (cp: any, index: number) => ({
-            _type: "counsellingParticipant",
-            _key:
-              cp._key ||
-              `cp-${
+          (cp: any, index: number) => {
+            const participantId = typeof cp.participant === "string"
+              ? cp.participant
+              : cp.participant._id;
+
+            return {
+              _type: "counsellingParticipant",
+              // Preserve existing _key if available, otherwise generate new one
+              _key: cp._key || `cp-${participantId}-${Date.now()}-${index}`,
+              // Preserve existing _id if available (for Sanity document updates)
+              ...(cp._id && { _id: cp._id }),
+              participant:
                 typeof cp.participant === "string"
-                  ? cp.participant
-                  : cp.participant._id
-              }-${Date.now()}-${index}`,
-            participant:
-              typeof cp.participant === "string"
-                ? { _ref: cp.participant, _type: "reference" }
-                : { _ref: cp.participant._id, _type: "reference" },
-            status: cp.status || "pending",
-            comments: cp.comments || "",
-          })
+                  ? { _ref: cp.participant, _type: "reference" }
+                  : { _ref: cp.participant._id, _type: "reference" },
+              status: cp.status || "pending",
+              comments: cp.comments || "",
+            };
+          }
         );
         // Clear old participants field if using new structure
         updateData.participants = undefined;
