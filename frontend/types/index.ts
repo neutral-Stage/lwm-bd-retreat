@@ -154,3 +154,18 @@ export interface Baptized {
   location?: string;
   notes?: string;
 }
+
+export interface ChildParticipant {
+  _id: string;
+  _type: "childParticipant";
+  _createdAt: string;
+  _updatedAt: string;
+  participant: Participant;
+  isSaved: "saved" | "bornAgain" | "confused" | "notSaved";
+  baptism: boolean;
+  comments?: string;
+}
+
+export interface ChildParticipantWithDetails extends ChildParticipant {
+  participantDetails: Participant;
+}

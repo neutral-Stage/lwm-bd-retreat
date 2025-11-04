@@ -7,6 +7,7 @@ import {
   Counselling,
   CounsellingParticipant,
   Baptized,
+  ChildParticipant,
 } from "../types/index";
 
 // Cache configuration
@@ -1089,9 +1090,10 @@ export async function updateCounselling(
       ) {
         updateData.counsellingParticipants = updates.participants.map(
           (cp: any, index: number) => {
-            const participantId = typeof cp.participant === "string"
-              ? cp.participant
-              : cp.participant._id;
+            const participantId =
+              typeof cp.participant === "string"
+                ? cp.participant
+                : cp.participant._id;
 
             return {
               _type: "counsellingParticipant",
@@ -1919,6 +1921,355 @@ export async function getBaptizedByStatus(
     return Array.isArray(baptized) ? baptized : [];
   } catch (error) {
     console.error("Error fetching baptized by status:", error);
+    return [];
+  }
+}
+
+// Child Participant data fetching functions
+export async function getAllChildParticipants(): Promise<ChildParticipant[]> {
+  try {
+    const childParticipants = await client.fetch(
+      `*[_type == "childParticipant"] | order(_createdAt desc) {
+        _id,
+        _type,
+        _createdAt,
+        _updatedAt,
+        "participant": participant->{
+          _id,
+          name,
+          contact,
+          department,
+          fellowshipName,
+          gender,
+          present,
+          regNo,
+          age,
+          area,
+          guardianName,
+          guardianContact
+        },
+        isSaved,
+        baptism,
+        comments,
+        createdAt,
+        updatedAt
+      }`,
+      {},
+      {
+        cache: "no-store", // Always fetch fresh data for admin
+      }
+    );
+
+    return Array.isArray(childParticipants) ? childParticipants : [];
+  } catch (error) {
+    console.error("Error fetching child participants:", error);
+    return [];
+  }
+}
+
+export async function getChildParticipantById(
+  id: string
+): Promise<ChildParticipant | null> {
+  try {
+    const childParticipant = await client.fetch(
+      `*[_type == "childParticipant" && _id == $id][0] {
+        _id,
+        _type,
+        _createdAt,
+        _updatedAt,
+        "participant": participant->{
+          _id,
+          name,
+          contact,
+          department,
+          fellowshipName,
+          gender,
+          present,
+          regNo,
+          age,
+          area,
+          guardianName,
+          guardianContact
+        },
+        isSaved,
+        baptism,
+        comments,
+        createdAt,
+        updatedAt
+      }`,
+      { id },
+      {
+        next: { revalidate: REVALIDATE_TIME },
+      }
+    );
+
+    return childParticipant || null;
+  } catch (error) {
+    console.error("Error fetching child participant by ID:", error);
+    return null;
+  }
+}
+
+export async function createChildParticipant(childParticipantData: {
+  participant: string;
+  isSaved: "saved" | "bornAgain" | "confused";
+  baptism?: boolean;
+  comments?: string;
+}): Promise<ChildParticipant> {
+  try {
+    const participantRef = {
+      _ref: childParticipantData.participant,
+      _type: "reference",
+    };
+
+    const result = await client.create({
+      _type: "childParticipant",
+      participant: participantRef,
+      isSaved: childParticipantData.isSaved,
+      baptism: childParticipantData.baptism || false,
+      comments: childParticipantData.comments || "",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    if (!result || !result._id) {
+      throw new Error("Failed to create child participant record");
+    }
+
+    // Fetch the complete child participant data with populated references
+    const populatedChildParticipant = await getChildParticipantById(result._id);
+
+    if (!populatedChildParticipant) {
+      throw new Error("Failed to fetch created child participant record");
+    }
+
+    return populatedChildParticipant;
+  } catch (error) {
+    console.error("Error creating child participant:", error);
+    throw new Error("Failed to create child participant record");
+  }
+}
+
+export async function updateChildParticipant(
+  id: string,
+  updates: Partial<ChildParticipant>
+): Promise<ChildParticipant> {
+  try {
+    const updateData: any = { ...updates };
+
+    // Handle participant reference
+    if (updates.participant) {
+      updateData.participant =
+        typeof updates.participant === "string"
+          ? { _ref: updates.participant, _type: "reference" }
+          : { _ref: updates.participant._id, _type: "reference" };
+    }
+
+    updateData.updatedAt = new Date().toISOString();
+
+    const result = await client.patch(id).set(updateData).commit();
+
+    if (!result || !result._id) {
+      throw new Error("Failed to update child participant record");
+    }
+
+    // Fetch the complete child participant data with populated references
+    const populatedChildParticipant = await getChildParticipantById(result._id);
+
+    if (!populatedChildParticipant) {
+      throw new Error("Failed to fetch updated child participant record");
+    }
+
+    return populatedChildParticipant;
+  } catch (error) {
+    console.error("Error updating child participant:", error);
+    throw new Error("Failed to update child participant record");
+  }
+}
+
+export async function deleteChildParticipant(id: string): Promise<void> {
+  try {
+    await client.delete(id);
+  } catch (error) {
+    console.error("Error deleting child participant:", error);
+    throw new Error("Failed to delete child participant record");
+  }
+}
+
+export function isValidChildParticipant(data: any): data is ChildParticipant {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    typeof data._id === "string" &&
+    typeof data.isSaved === "string" &&
+    typeof data.baptism === "boolean" &&
+    data.participant
+  );
+}
+
+// Get child participants by isSaved status
+export async function getChildParticipantsByIsSaved(
+  isSaved: "saved" | "bornAgain" | "confused"
+): Promise<ChildParticipant[]> {
+  try {
+    const childParticipants = await client.fetch(
+      `*[_type == "childParticipant" && isSaved == $isSaved] | order(_createdAt desc) {
+        _id,
+        _type,
+        _createdAt,
+        _updatedAt,
+        "participant": participant->{
+          _id,
+          name,
+          contact,
+          department,
+          fellowshipName,
+          gender,
+          present,
+          regNo,
+          age,
+          area,
+          guardianName,
+          guardianContact
+        },
+        isSaved,
+        baptism,
+        comments,
+        createdAt,
+        updatedAt
+      }`,
+      { isSaved },
+      {
+        cache: "no-store",
+      }
+    );
+
+    return Array.isArray(childParticipants) ? childParticipants : [];
+  } catch (error) {
+    console.error(
+      "Error fetching child participants by isSaved status:",
+      error
+    );
+    return [];
+  }
+}
+
+// Get child participants by baptism status
+export async function getChildParticipantsByBaptism(
+  baptized: boolean
+): Promise<ChildParticipant[]> {
+  try {
+    const childParticipants = await client.fetch(
+      `*[_type == "childParticipant" && baptism == $baptized] | order(_createdAt desc) {
+        _id,
+        _type,
+        _createdAt,
+        _updatedAt,
+        "participant": participant->{
+          _id,
+          name,
+          contact,
+          department,
+          fellowshipName,
+          gender,
+          present,
+          regNo,
+          age,
+          area,
+          guardianName,
+          guardianContact
+        },
+        isSaved,
+        baptism,
+        comments,
+        createdAt,
+        updatedAt
+      }`,
+      { baptized },
+      {
+        cache: "no-store",
+      }
+    );
+
+    return Array.isArray(childParticipants) ? childParticipants : [];
+  } catch (error) {
+    console.error(
+      "Error fetching child participants by baptism status:",
+      error
+    );
+    return [];
+  }
+}
+
+// Get child participants with both participant and child-specific data
+export async function getChildParticipantsWithDetails(): Promise<any[]> {
+  try {
+    const childParticipants = await client.fetch(
+      `*[_type == "childParticipant"] | order(_createdAt desc) {
+        _id,
+        _type,
+        _createdAt,
+        _updatedAt,
+        "participant": participant->{
+          _id,
+          name,
+          contact,
+          department,
+          fellowshipName,
+          gender,
+          present,
+          regNo,
+          age,
+          area,
+          guardianName,
+          guardianContact
+        },
+        isSaved,
+        baptism,
+        comments,
+        createdAt,
+        updatedAt
+      }`,
+      {},
+      {
+        cache: "no-store",
+      }
+    );
+
+    return Array.isArray(childParticipants) ? childParticipants : [];
+  } catch (error) {
+    console.error("Error fetching child participants with details:", error);
+    return [];
+  }
+}
+
+// Get available participants for adding child-specific data (participants with department="child" who don't have childParticipant records yet)
+export async function getAvailableChildParticipants(): Promise<Participant[]> {
+  try {
+    const participants = await client.fetch(
+      `*[_type == "participant" && department == "child" && !(_id in *[_type == "childParticipant"].participant._ref)]{
+        _id,
+        name,
+        contact,
+        department,
+        fellowshipName,
+        gender,
+        present,
+        regNo,
+        age,
+        area,
+        guardianName,
+        guardianContact
+      } | order(name asc)`,
+      {},
+      {
+        cache: "no-store",
+      }
+    );
+
+    return Array.isArray(participants) ? participants : [];
+  } catch (error) {
+    console.error("Error fetching available child participants:", error);
     return [];
   }
 }

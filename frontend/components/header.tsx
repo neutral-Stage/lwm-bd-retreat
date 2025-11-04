@@ -38,6 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
   const navigationItems = [
     { label: "Fellowship", href: "/fellowship" },
     { label: "List", href: "/list" },
+    { label: "Children", href: "/children" },
     { label: "Groups", href: "/groups" },
     { label: "Counselling", href: "/counselling" },
     { label: "Baptized", href: "/baptized" },
